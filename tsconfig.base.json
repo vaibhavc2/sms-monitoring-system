@@ -11,7 +11,8 @@
     "baseUrl": "./",
     "paths": {
       "@sms/server": ["./apps/server/*"],
-      "@sms/client": ["./apps/client/*"]
+      "@sms/client": ["./apps/client/*"],
+      "@sms/transactional": ["./libs/transactional/*"]
     }
   },
   "exclude": ["node_modules"]
