@@ -1,0 +1,36 @@
+{
+  "name": "sms-monitoring-system",
+  "version": "1.0.0",
+  "description": "The full-stack monorepo of the SMS Monitoring System",
+  "private": true,
+  "scripts": {
+    "format": "prettier \"{apps,libs}/**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
+    "format:check": "pnpm format --check",
+    "format:write": "pnpm format --write",
+    "tsc": "nx run-many -t tsc",
+    "lint": "nx run-many -t lint",
+    "build": "nx run-many -t build",
+    "dev": "nx run-many -t dev",
+    "validate": "pnpm format:write && pnpm tsc && pnpm lint && pnpm build",
+    "prepare": "husky",
+    "cm": "cz",
+    "cm:offline": "git add . && cz",
+    "cm:all": "git add . && cz && git push",
+    "server:dev": "nx run @sms/server:dev",
+    "client:dev": "nx run @sms/client:dev"
+  },
+  "keywords": [],
+  "author": "Vaibhav Chopra",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "commitizen": "^4.3.1",
+    "eslint": "^9.13.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "nx": "20.0.3"
+  }
+}
