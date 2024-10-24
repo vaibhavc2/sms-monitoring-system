@@ -1,5 +1,5 @@
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
-import prisma from '#/common/prisma.client';
+import prisma from '#/common/db/prisma/prisma.client';
 import jwtService from '#/api/v1/services/external/jwt.service';
 import {
   RedisService,

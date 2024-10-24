@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +8,16 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum SMSStatus {
+  success
+  failure
 }
 
 model User {
@@ -25,10 +32,87 @@ model User {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  @@index([email], name: "user_email_idx")
+  // Relations - using Restrict to prevent deletion of users who have taken actions
+  disabledCountries Country[]
+  disabledOperators Operator[]
+
+  @@index([email])
 }
 
-enum Role {
-  user
-  admin
+model Country {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  code       String    @unique
+  disabled   Boolean   @default(false)
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  disabledBy Int?
+
+  // Relations
+  // Allow deletion of users while preserving audit trail
+  user        User?        @relation(fields: [disabledBy], references: [id], onDelete: SetNull)
+  smsMessages SMSMessage[]
+  smsMetrics  SMSMetric[]
+
+  @@index([code])
+}
+
+model Operator {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  disabled   Boolean   @default(false)
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  disabledBy Int?
+
+  // Relations
+  // Allow deletion of users while preserving audit trail
+  user        User?        @relation(fields: [disabledBy], references: [id], onDelete: SetNull)
+  smsMessages SMSMessage[]
+  smsMetrics  SMSMetric[]
+
+  @@index([name])
+}
+
+model SMSMessage {
+  id          Int       @id @default(autoincrement())
+  phoneNumber String
+  countryId   Int
+  operatorId  Int
+  status      SMSStatus
+  smsContent  String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  // Allow soft deletion of countries/operators for recent messages
+  country  Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Restrict)
+
+  @@index([countryId])
+  @@index([operatorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SMSMetric {
+  id            Int      @id @default(autoincrement())
+  intervalStart DateTime
+  intervalEnd   DateTime
+  countryId     Int
+  operatorId    Int
+  smsSent       Int      @default(0)
+  success       Int      @default(0)
+  failure       Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  // Preserve historical metrics even if country/operator is deleted
+  country  Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Restrict)
+
+  @@index([countryId])
+  @@index([operatorId])
+  @@index([intervalStart, intervalEnd])
 }

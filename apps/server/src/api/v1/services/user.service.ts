@@ -1,7 +1,7 @@
 import { UserDTO, UserWithoutPassword } from '#/api/v1/entities/dtos/user.dto';
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
 import envConfig from '#/common/config/env.config';
-import prisma from '#/common/prisma.client';
+import prisma from '#/common/db/prisma/prisma.client';
 import cacheService from '#/api/v1/services/external/cache.service';
 import jwtService from '#/api/v1/services/external/jwt.service';
 import otpService from '#/api/v1/services/external/otp.service';

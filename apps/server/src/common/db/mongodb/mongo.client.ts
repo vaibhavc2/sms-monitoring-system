@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import { printErrorMessage } from '../utils/error-extras.util';
-import envConfig from '../config/env.config';
-import { logger } from '../utils/logger.util';
+import { printErrorMessage } from '../../utils/error-extras.util';
+import envConfig from '../../config/env.config';
+import { logger } from '../../utils/logger.util';
 import { IProgram, Program } from './models/program.model';
 import {
   IProgramSession,

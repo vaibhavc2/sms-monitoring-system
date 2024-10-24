@@ -1,6 +1,6 @@
 import envConfig from '#/common/config/env.config';
 import { PrismaClient } from '@prisma/client';
-import { logger } from './utils/logger.util';
+import { logger } from '../../utils/logger.util';
 import pwdService from '#/api/v1/services/external/password.service';
 
 const { isDev } = envConfig;
