@@ -2,6 +2,7 @@ import envConfig from '#/common/config/env.config';
 import { Request, Response } from 'express';
 import { version, description } from '../../package.json';
 import { CorsOptions } from 'cors';
+import { redis } from '#/api/v1/services/external/redis.service';
 // import chalk from 'chalk';
 
 const { isDev, HOST, PORT, CLIENT_URL } = envConfig;
@@ -19,6 +20,7 @@ const ct = {
     methods: corsMethods,
   } as CorsOptions,
   appName: 'SMS Monitoring Application',
+  redisKeyPrefix: 'SMS_MONITORING_APP:',
   appVersion: version,
   appDescription: description,
   base_url: `${isDev ? 'http' : 'https'}://${HOST}${isDev ? ':' + PORT : ''}`,

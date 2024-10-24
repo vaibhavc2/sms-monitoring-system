@@ -6,6 +6,8 @@ import ct from './common/constants';
 import prisma from './common/prisma.client';
 import { redis } from './api/v1/services/external/redis.service';
 import { logger } from './common/utils/logger.util';
+import mongoose from 'mongoose';
+import mongoClient from './common/mongodb/mongo.client';
 
 const { PORT, NODE_ENV, isDev, isProd } = envConfig;
 
@@ -14,10 +16,17 @@ type ExpressServer = Server<typeof IncomingMessage, typeof ServerResponse>;
 class HTTPServer {
   private readonly app: Application;
   private server: ExpressServer;
+  private connection: mongoose.Connection;
 
   // bootstrap the express application and server
   constructor(appInstance: App) {
     this.app = appInstance.init();
+
+    // setup mongodb connection
+    this.connection = mongoClient.connect();
+
+    // adding connection to express app
+    this.app.set('connection', this.connection);
 
     this.server = this.app.listen(PORT, () => {
       logger.info(`Express Server started successfully in ${NODE_ENV} mode.`);
@@ -45,6 +54,8 @@ class HTTPServer {
       console.debug('HTTP server closed gracefully.');
 
       try {
+        await this.connection.close(); // Close MongoDB connection
+
         await redis.quit(); // Close Redis connection
 
         await prisma.$disconnect(); // Close Prisma connection

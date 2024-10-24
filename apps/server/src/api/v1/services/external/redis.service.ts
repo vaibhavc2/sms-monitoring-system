@@ -1,17 +1,20 @@
 import { REDIS_KEY_PREFIXES } from '#/api/v1/entities/enums/redis-keys.enums';
 import envConfig from '#/common/config/env.config';
+import ct from '#/common/constants';
 import { asyncFnWrapper } from '#/common/utils/async-errors.util';
 import { logger } from '#/common/utils/logger.util';
 import { sanitizeParams } from '#/common/utils/sanitize.util';
 import { Callback, Redis } from 'ioredis';
 
-const { REDIS_URL } = envConfig;
+const { REDIS_URL, isDev } = envConfig;
 
 export class RedisService {
   private readonly redis: Redis;
 
   constructor() {
-    this.redis = new Redis(REDIS_URL);
+    this.redis = new Redis(REDIS_URL, {
+      keyPrefix: isDev ? ct.redisKeyPrefix : undefined,
+    });
 
     // Listen for the initial connect event
     this.redis.on('connect', () => {

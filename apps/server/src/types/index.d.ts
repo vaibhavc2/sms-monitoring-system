@@ -2,6 +2,8 @@ import { Prisma, User } from '@prisma/client';
 
 declare global {
   namespace Express {
+    type MulterFile = Express.Multer.File;
+    type MulterFiles = { [fieldname: string]: Express.Multer.File[] };
     interface Request {
       user?: Omit<User, 'password'>;
       token?: string;
