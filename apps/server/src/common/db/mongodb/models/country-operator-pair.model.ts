@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
+import prisma from '../../prisma/prisma.client';
 
 export interface ICountryOperatorPair extends Document {
   _id: string | Schema.Types.ObjectId;
@@ -7,8 +8,8 @@ export interface ICountryOperatorPair extends Document {
   operator: string;
   active: boolean;
   highPriority: boolean;
-  createdBy: Schema.Types.ObjectId; // References users._id
-  updatedBy?: Schema.Types.ObjectId; // References users._id
+  createdBy: number; // Changed to number to match Prisma User.id
+  updatedBy?: number; // Changed to number to match Prisma User.id
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +21,7 @@ const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
   {
     programId: {
       type: Schema.Types.ObjectId,
-      ref: 'Program', // References the Program model
+      ref: 'Program',
       required: true,
     },
     country: {
@@ -42,19 +43,46 @@ const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
       default: false,
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User', // References the User model
+      type: Number, // Changed to Number type to store Prisma User.id
       required: true,
     },
     updatedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User', // References the User model
+      type: Number, // Changed to Number type to store Prisma User.id
     },
   },
   {
-    timestamps: true, // Automatically manage createdAt and updatedAt
+    timestamps: true,
   },
 );
+
+// Add a middleware to validate that the user exists in Prisma before saving
+CountryOperatorPairSchema.pre('save', async function (next) {
+  try {
+    // Check if createdBy user exists
+    const createdByUser = await prisma.user.findUnique({
+      where: { id: this.createdBy },
+    });
+
+    if (!createdByUser) {
+      throw new Error('Created by user not found in Prisma database');
+    }
+
+    // Check if updatedBy user exists (if provided)
+    if (this.updatedBy) {
+      const updatedByUser = await prisma.user.findUnique({
+        where: { id: this.updatedBy },
+      });
+
+      if (!updatedByUser) {
+        throw new Error('Updated by user not found in Prisma database');
+      }
+    }
+
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 
 export const CountryOperatorPair: Model<ICountryOperatorPair> =
   mongoose.model<ICountryOperatorPair>(
