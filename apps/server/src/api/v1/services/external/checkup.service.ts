@@ -9,7 +9,9 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { redisService } from './redis.service';
+import { RedisService, redisService } from './redis.service';
+import mongoClient from '#/common/db/mongodb/mongo.client';
+import prisma from '#/common/db/prisma/prisma.client';
 
 const execAsync = promisify(exec);
 
@@ -39,60 +41,58 @@ class CheckupService {
   }
 
   async dbCheck(): Promise<HealthDTO.CheckResult> {
-    const prisma = new PrismaClient();
+    const checks = await Promise.allSettled([
+      this.checkPrisma(),
+      this.checkRedis(),
+      this.checkMongo(),
+    ]);
 
-    let prismaWorking = true;
-    let redisWorking = true;
+    const [prismaResult, redisResult, mongoResult] = checks;
 
-    try {
-      await prisma.$connect();
-      await prisma.$disconnect();
-    } catch (error) {
-      logger.error(
-        'Database check failed: ' + chalk.red(getErrorMessage(error)),
-      );
-
-      prismaWorking = false;
-
-      return {
-        success: false,
-        message: `Prisma Database connection failed!`,
-        errors: `${getErrorMessage(error)}`,
-        info: {
-          prisma: prismaWorking,
-          redis: 'Not checked',
-        },
-      };
-    }
-
-    try {
-      await redisService.set('x', 'y');
-      await redisService.del(['x']);
-    } catch (error) {
-      logger.error('Redis check failed: ' + chalk.red(getErrorMessage(error)));
-
-      redisWorking = false;
-
-      return {
-        success: false,
-        message: `Redis connection failed!`,
-        errors: `${getErrorMessage(error)}`,
-        info: {
-          prisma: prismaWorking,
-          redis: redisWorking,
-        },
-      };
-    }
+    const allSuccessful = checks.every((check) => check.status === 'fulfilled');
 
     return {
-      success: true,
-      message:
-        'Database connection successful. All Databases are up and running!',
+      success: allSuccessful,
+      message: allSuccessful
+        ? 'All database connections are healthy'
+        : 'One or more database connections failed',
       info: {
-        prisma: prismaWorking,
-        redis: redisWorking,
+        prisma: this.getCheckStatus(prismaResult),
+        redis: this.getCheckStatus(redisResult),
+        mongodb: this.getCheckStatus(mongoResult),
       },
+      errors: this.collectErrors(checks),
     };
+  }
+
+  private async checkPrisma(): Promise<void> {
+    // Instead of connecting/disconnecting, just run a simple query
+    await prisma.$queryRaw`SELECT 1`;
+  }
+
+  private async checkRedis(): Promise<void> {
+    await redisService.ping();
+  }
+
+  private async checkMongo(): Promise<void> {
+    await mongoClient.ping();
+  }
+
+  private getCheckStatus(result: PromiseSettledResult<void>): boolean | string {
+    return result.status === 'fulfilled';
+  }
+
+  private collectErrors(
+    checks: PromiseSettledResult<void>[],
+  ): string | undefined {
+    const errors = checks
+      .filter(
+        (check): check is PromiseRejectedResult => check.status === 'rejected',
+      )
+      .map((check) => getErrorMessage(check.reason))
+      .join('; ');
+
+    return errors.length > 0 ? errors : undefined;
   }
 
   async diskCheck(): Promise<HealthDTO.CheckResult> {

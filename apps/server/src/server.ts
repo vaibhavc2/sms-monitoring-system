@@ -16,17 +16,10 @@ type ExpressServer = Server<typeof IncomingMessage, typeof ServerResponse>;
 class HTTPServer {
   private readonly app: Application;
   private server: ExpressServer;
-  private connection: mongoose.Connection;
 
   // bootstrap the express application and server
   constructor(appInstance: App) {
     this.app = appInstance.init();
-
-    // setup mongodb connection
-    this.connection = mongoClient.connect();
-
-    // adding connection to express app
-    this.app.set('connection', this.connection);
 
     this.server = this.app.listen(PORT, () => {
       logger.info(`Express Server started successfully in ${NODE_ENV} mode.`);
@@ -54,7 +47,7 @@ class HTTPServer {
       console.debug('HTTP server closed gracefully.');
 
       try {
-        await this.connection.close(); // Close MongoDB connection
+        await mongoClient.disconnect(); // Close MongoDB connection
 
         await redis.quit(); // Close Redis connection
 

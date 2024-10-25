@@ -101,6 +101,10 @@ export class RedisService {
   //   }
   // };
 
+  async ping() {
+    return await this.redis.ping();
+  }
+
   async get(key: string): Promise<string | null> {
     return await this.redis.get(key);
   }

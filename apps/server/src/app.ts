@@ -12,15 +12,22 @@ import versionMiddleware from './common/middlewares/version.middleware';
 import requestLogger from './common/middlewares/request-logger.middleware';
 import apiRouter from './global.routes';
 import { errorEmitter } from './common/utils/error-extras.util';
+import mongoose from 'mongoose';
+import mongoClient from './common/db/mongodb/mongo.client';
+import { logger } from './common/utils/logger.util';
 
 const { isDev } = envConfig;
 
 export class App {
   private app: Application;
+  public mongoConnection: mongoose.Connection;
 
   constructor() {
     // creating express app
     this.app = express();
+
+    // connecting to MongoDB
+    this.mongoConnection = mongoClient.connect();
   }
 
   public init() {
@@ -73,6 +80,12 @@ export class App {
   }
 
   private errorHandling() {
+    // handling unhandled promise rejections
+    process.on('unhandledRejection', (error) => {
+      console.error('Unhandled Rejection:', error);
+      process.exit(1); // exit with failure
+    });
+
     const { routeNotFound, logger, handler } = errorMiddleware;
 
     // catch errors emitted by the errorEmitter

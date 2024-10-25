@@ -36,7 +36,22 @@ class MongoClient {
     };
   }
 
+  private securityCheck() {
+    // check if the connection is already open
+    if (mongoose.connection.readyState === 1) {
+      logger.warn(
+        '[MONGODB] :: Connection already open :: at connectDB() :: Database',
+      );
+
+      return true;
+    }
+
+    return false;
+  }
+
   public connect() {
+    if (this.securityCheck()) return mongoose.connection;
+
     const connectionInstance = mongoose.createConnection(MONGO_URI);
 
     connectionInstance.on('error', (err) => {
@@ -62,23 +77,40 @@ class MongoClient {
   }
 
   public async connectAsync() {
-    return new Promise<typeof mongoose>((resolve, reject) => {
-      mongoose
-        .connect(MONGO_URI)
-        .then((connectionInstance) => {
-          logger.info(
-            `[MONGODB] :: Database connected successfully!! DB HOST: ${connectionInstance.connection.host}`,
-          );
-          resolve(connectionInstance);
-        })
-        .catch((error) => {
-          printErrorMessage(
-            error,
-            '[MONGODB] :: Connection FAILED :: at connectDB() :: Database',
-          );
-          reject(error);
-        });
-    });
+    if (this.securityCheck()) return mongoose.connection;
+    else {
+      return new Promise((resolve, reject) => {
+        mongoose
+          .connect(MONGO_URI)
+          .then((connectionInstance) => {
+            logger.info(
+              `[MONGODB] :: Database connected successfully!! DB HOST: ${connectionInstance.connection.host}`,
+            );
+            resolve(connectionInstance.connection);
+          })
+          .catch((error) => {
+            printErrorMessage(
+              error,
+              '[MONGODB] :: Connection FAILED :: at connectDB() :: Database',
+            );
+            reject(error);
+          });
+      });
+    }
+  }
+
+  public async ping() {
+    try {
+      await mongoose.connection.db?.admin().ping();
+      logger.info('[MONGODB] :: Ping successful');
+    } catch (error) {
+      logger.error(
+        printErrorMessage(
+          error,
+          '[MONGODB] :: Ping FAILED :: at ping() :: Database',
+        ),
+      );
+    }
   }
 
   public async disconnect() {

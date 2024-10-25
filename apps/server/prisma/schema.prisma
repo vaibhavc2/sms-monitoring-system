@@ -52,8 +52,9 @@ model Country {
   // Relations
   // Allow deletion of users while preserving audit trail
   user        User?        @relation(fields: [disabledBy], references: [id], onDelete: SetNull)
-  smsMessages SMSMessage[]
-  smsMetrics  SMSMetric[]
+  // Enabling bidirectional queries
+  smsMessages SMSMessage[] // One-to-many: One country can have multiple SMS messages. Enables querying all messages for a country.
+  smsMetrics  SMSMetric[] // One-to-many: One country can have multiple SMS metrics. Enables querying all metrics for a country.
 
   @@index([code])
 }
@@ -70,8 +71,9 @@ model Operator {
   // Relations
   // Allow deletion of users while preserving audit trail
   user        User?        @relation(fields: [disabledBy], references: [id], onDelete: SetNull)
-  smsMessages SMSMessage[]
-  smsMetrics  SMSMetric[]
+  // Enabling bidirectional queries
+  smsMessages SMSMessage[] // One-to-many: One operator can have multiple SMS messages. Enables querying all messages for an operator.
+  smsMetrics  SMSMetric[] // One-to-many: One operator can have multiple SMS metrics. Enables querying all metrics for an operator.
 
   @@index([name])
 }
