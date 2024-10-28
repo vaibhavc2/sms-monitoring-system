@@ -1,10 +1,7 @@
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
 import prisma from '#/common/db/prisma/prisma.client';
 import jwtService from '#/api/v1/services/external/jwt.service';
-import {
-  RedisService,
-  redisService,
-} from '#/api/v1/services/external/redis.service';
+import redisService, { redis } from '#/api/v1/services/external/redis.service';
 import ApiError from '#/common/utils/api-error.util';
 import { asyncErrorHandler } from '#/common/utils/async-errors.util';
 import { NextFunction, Request, Response } from 'express';
@@ -51,8 +48,8 @@ class Auth {
         }
 
         // check if token is invalidated (logged out all devices)
-        const invalidationTimestamp = await redisService.get(
-          RedisService.createKey('INVALIDATED', userId),
+        const invalidationTimestamp = await redis.get(
+          redisService.createKey('INVALIDATED', userId),
         );
 
         if (
@@ -97,26 +94,12 @@ class Auth {
 
       // check if user is admin (authorize)
       if (req.user?.role !== 'admin') {
-        throw ApiError.forbidden('Forbidden! Unauthorized!');
+        throw ApiError.forbidden('Forbidden! Admin access only!');
       }
 
       next();
     },
   );
-
-  // private __moderator = asyncErrorHandler(
-  //   async (req: Request, res: Response, next: NextFunction) => {
-  //     // authenticate user
-  //     await this.__user({ verified: true, skipNext: true })(req, res, next);
-
-  //     // check if user is moderator or admin
-  //     if (req.user?.role !== 'moderator' && req.user?.role !== 'admin') {
-  //       throw ApiError.forbidden('Forbidden! Unauthorized!');
-  //     }
-
-  //     next();
-  //   },
-  // );
 
   user() {
     return this.__user();

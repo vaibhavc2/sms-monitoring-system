@@ -2,12 +2,13 @@ import { Prisma, User } from '@prisma/client';
 
 declare global {
   namespace Express {
-    type MulterFile = Express.Multer.File;
-    type MulterFiles = { [fieldname: string]: Express.Multer.File[] };
+    // type MulterFile = Express.Multer.File;
+    // type MulterFiles = { [fieldname: string]: Express.Multer.File[] };
     interface Request {
       user?: Omit<User, 'password'>;
       token?: string;
       deviceId?: string;
+      originalFileName?: string;
       // body: {
       //   // Include other properties from req.body you want to type here
       // } & Request['body']; // This ensures we extend the existing body type rather than overwrite it

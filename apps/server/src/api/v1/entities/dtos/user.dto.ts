@@ -55,4 +55,6 @@ export namespace UserDTO {
   }
 }
 
-export type UserWithoutPassword = Omit<User, 'password'>;
+export type UserWithoutPassword = Omit<User, 'password' | 'id'> & {
+  id: string | number;
+};

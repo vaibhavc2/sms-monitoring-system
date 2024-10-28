@@ -9,7 +9,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { RedisService, redisService } from './redis.service';
+import redisService from './redis.service';
 import mongoClient from '#/common/db/mongodb/mongo.client';
 import prisma from '#/common/db/prisma/prisma.client';
 

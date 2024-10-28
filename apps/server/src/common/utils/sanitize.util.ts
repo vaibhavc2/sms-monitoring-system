@@ -1,7 +1,14 @@
-export function sanitize(value: string): string {
-  // Implement sanitization logic here. This is a basic example that removes
-  // special characters. Adjust according to your needs.
-  return value.replace(/[^a-zA-Z0-9-_]/g, '');
+export function sanitize(value: unknown): string {
+  // Convert the value to string and handle null/undefined
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Convert any input to string
+  const stringValue = String(value);
+
+  // Remove special characters
+  return stringValue.replace(/[^a-zA-Z0-9-_]/g, '');
 }
 
 /**
@@ -11,6 +18,11 @@ export function sanitize(value: string): string {
  * @param params The parameters to sanitize.
  * @returns The sanitized parameters.
  */
-export function sanitizeParams(params: string[]): string[] {
+export function sanitizeParams(params: unknown[]): string[] {
+  // Handle case where params is undefined or null
+  if (!Array.isArray(params)) {
+    return [];
+  }
+
   return params.map((str) => sanitize(str));
 }

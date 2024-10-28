@@ -32,7 +32,7 @@ export function getErrorMessage(error: unknown) {
 
 export function printErrorMessage(error: unknown, context = '') {
   const errorMessage = getErrorMessage(error);
-  logger.error(`Error in ${context}: ${errorMessage}`);
+  logger.error(`${context}: ${errorMessage}`);
 }
 
 // / ************************************************************ //

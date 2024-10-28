@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Connection, Mongoose } from 'mongoose';
 import { printErrorMessage } from '../../utils/error-extras.util';
 import envConfig from '../../config/env.config';
 import { logger } from '../../utils/logger.util';
@@ -13,7 +13,7 @@ import {
   CountryOperatorPair,
 } from './models/country-operator-pair.model';
 
-const { MONGO_URI } = envConfig;
+const { MONGO_URI, MONGO_DB_NAME } = envConfig;
 
 export type { IProgram, IProgramSession, ICountryOperatorPair, IPriorityPair };
 
@@ -49,51 +49,22 @@ class MongoClient {
     return false;
   }
 
-  public connect() {
-    if (this.securityCheck()) return mongoose.connection;
-
-    const connectionInstance = mongoose.createConnection(MONGO_URI);
-
-    connectionInstance.on('error', (err) => {
-      logger.error(
-        printErrorMessage(
-          err,
-          '[MONGODB] :: Connection FAILED :: at connectDB() :: Database',
-        ),
-      );
-    });
-
-    connectionInstance.on('disconnected', () => {
-      logger.info('[MONGODB] :: Connection DISCONNECTED :: at connectDB()');
-    });
-
-    connectionInstance.once('open', () => {
-      logger.info(
-        `[MONGODB] :: Database connected successfully!! DB HOST: ${connectionInstance.host}`,
-      );
-    });
-
-    return connectionInstance;
-  }
-
-  public async connectAsync() {
+  async connect() {
     if (this.securityCheck()) return mongoose.connection;
     else {
       return new Promise((resolve, reject) => {
         mongoose
-          .connect(MONGO_URI)
-          .then((connectionInstance) => {
+          .connect(MONGO_URI, {
+            dbName: MONGO_DB_NAME,
+          })
+          .then((conn) => {
             logger.info(
-              `[MONGODB] :: Database connected successfully!! DB HOST: ${connectionInstance.connection.host}`,
+              `[MONGODB] :: Connected to ${conn.connection.name} database at ${conn.connection.host}`,
             );
-            resolve(connectionInstance.connection);
+            resolve(conn.connection);
           })
           .catch((error) => {
-            printErrorMessage(
-              error,
-              '[MONGODB] :: Connection FAILED :: at connectDB() :: Database',
-            );
-            reject(error);
+            printErrorMessage(error, '[MONGODB] :: Connection FAILED');
           });
       });
     }
@@ -120,5 +91,6 @@ class MongoClient {
 }
 
 const mongoClient = new MongoClient();
+export const mongoModels = mongoClient.models;
 
 export default mongoClient;

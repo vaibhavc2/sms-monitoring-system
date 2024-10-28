@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { version, description } from '../../package.json';
 import { CorsOptions } from 'cors';
 import { redis } from '#/api/v1/services/external/redis.service';
+import { capitalizeTrimName } from './utils/capitalize-trim-name.util';
 // import chalk from 'chalk';
 
 const { isDev, HOST, PORT, CLIENT_URL } = envConfig;
@@ -11,7 +12,10 @@ const corsMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
 
 type SameSiteOptions = 'strict' | 'lax' | 'none';
 
+const appName = 'SMS Monitoring System';
+
 const ct = {
+  appName,
   expressLimit: '50mb',
   corsMethods,
   corsOptions: {
@@ -19,8 +23,7 @@ const ct = {
     credentials: true,
     methods: corsMethods,
   } as CorsOptions,
-  appName: 'SMS Monitoring Application',
-  redisKeyPrefix: 'SMS_MONITORING_APP:',
+  redisKeyPrefix: String(capitalizeTrimName(appName) + '::'),
   appVersion: version,
   appDescription: description,
   base_url: `${isDev ? 'http' : 'https'}://${HOST}${isDev ? ':' + PORT : ''}`,
@@ -58,16 +61,29 @@ const ct = {
       criticalThreshold: 90, // 90% memory critical
     },
   },
-  mimeTypes: {
-    image: [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/tiff',
-      'image/bmp',
-      'image/svg+xml',
-    ],
+  files: {
+    uploadPath: 'uploads/scripts', // path to save uploaded files (scripts) using multer
+  },
+  mongo: {
+    baseOptions: {
+      timestamps: true,
+      toJSON: {
+        virtuals: true,
+        transform: (_doc: any, ret: any) => {
+          delete ret._id;
+          delete ret.__v;
+          return ret;
+        },
+      },
+      toObject: {
+        virtuals: true,
+        transform: (_doc: any, ret: any) => {
+          delete ret._id;
+          delete ret.__v;
+          return ret;
+        },
+      },
+    },
   },
 };
 

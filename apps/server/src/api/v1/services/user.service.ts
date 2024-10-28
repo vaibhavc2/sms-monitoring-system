@@ -6,10 +6,7 @@ import cacheService from '#/api/v1/services/external/cache.service';
 import jwtService from '#/api/v1/services/external/jwt.service';
 import otpService from '#/api/v1/services/external/otp.service';
 import pwdService from '#/api/v1/services/external/password.service';
-import {
-  RedisService,
-  redisService,
-} from '#/api/v1/services/external/redis.service';
+import redisService, { redis } from '#/api/v1/services/external/redis.service';
 import ApiError from '#/common/utils/api-error.util';
 import { convertTimeStr } from '#/common/utils/time.util';
 import { StandardResponseDTO } from '#/types';
@@ -113,7 +110,7 @@ class UserService implements UserServiceDTO {
 
     // Set cache for password
     await cacheService.set(
-      RedisService.createKey('PASSWORD', user.id, uuidv4()),
+      redisService.createKey('PASSWORD', user.id, uuidv4()),
       password, // password is hashed by middleware
       3600 * 24 * 7, // 7 days
     );
@@ -121,7 +118,12 @@ class UserService implements UserServiceDTO {
     return {
       message:
         'Registration successful! Please check your email to activate your account.',
-      data: { user: userData },
+      data: {
+        user: {
+          ...userData,
+          id: uuidv4(),
+        },
+      },
     };
   }
 
@@ -158,13 +160,19 @@ class UserService implements UserServiceDTO {
 
     // Set cache
     await cacheService.set(
-      RedisService.createKey('USER_PROFILE', user.id),
+      redisService.createKey('USER_PROFILE', user.id),
       userData,
     );
 
     return {
       message: 'User logged in successfully!',
-      data: { user: userData, tokens: { accessToken, refreshToken } },
+      data: {
+        user: {
+          ...userData,
+          id: uuidv4(),
+        },
+        tokens: { accessToken, refreshToken },
+      },
     };
   }
 
@@ -197,8 +205,8 @@ class UserService implements UserServiceDTO {
 
   async verify({ email, otpCode }: UserDTO.Verify) {
     // Get activation token from Redis
-    const activationTokenKey = RedisService.createKey('ACTIVATION', email);
-    const activationToken = await redisService.get(activationTokenKey);
+    const activationTokenKey = redisService.createKey('ACTIVATION', email);
+    const activationToken = await redis.get(activationTokenKey);
 
     if (!activationToken)
       throw ApiError.badRequest('Activation token expired! Please try again.');
@@ -214,8 +222,9 @@ class UserService implements UserServiceDTO {
       throw ApiError.badRequest('Invalid activation token! Please try again.');
 
     // Check if email and OTP code match
-    if (email !== tokenEmail || otpCode !== String(tokenOtpCode))
-      throw ApiError.badRequest('Invalid email or OTP code! Please try again.');
+    if (email !== tokenEmail) throw ApiError.badRequest('Invalid email!');
+    if (otpCode !== String(tokenOtpCode))
+      throw ApiError.badRequest('Invalid OTP code! Please try again.');
 
     // Update user verification status
     const user = await prisma.user.update({
@@ -231,14 +240,19 @@ class UserService implements UserServiceDTO {
       throw ApiError.internal('Failed to verify user! Please try again.');
 
     // Delete activation token from Redis
-    await redisService.del(activationTokenKey);
+    await redis.del(activationTokenKey);
 
     // Omit password from response
     const { password: _, ...userData } = user;
 
     return {
       message: 'User verified successfully!',
-      data: { user: userData },
+      data: {
+        user: {
+          ...userData,
+          id: uuidv4(),
+        },
+      },
     };
   }
 
@@ -251,8 +265,8 @@ class UserService implements UserServiceDTO {
       throw ApiError.unauthorized('Invalid token! Please login.');
 
     // Check if session exists in Redis
-    const token = await redisService.get(
-      RedisService.createKey('REFRESH_TOKEN', userId, deviceId),
+    const token = await redis.get(
+      redisService.createKey('REFRESH_TOKEN', userId, deviceId),
     );
 
     if (!token) throw ApiError.unauthorized('Invalid session! Please login.');
@@ -276,7 +290,7 @@ class UserService implements UserServiceDTO {
 
   async getProfile({ userId }: UserDTO.GetProfile) {
     // Cache key
-    const cacheKey = RedisService.createKey('USER_PROFILE', userId);
+    const cacheKey = redisService.createKey('USER_PROFILE', userId);
 
     // Fetch from cache
     const cachedUser = await cacheService.get<UserWithoutPassword>(cacheKey);
@@ -285,7 +299,7 @@ class UserService implements UserServiceDTO {
     if (cachedUser) {
       return {
         message: 'User profile fetched successfully!',
-        data: { user: cachedUser },
+        data: { user: { ...cachedUser, id: uuidv4() } },
       };
     } else {
       // Fetch from DB
@@ -305,7 +319,12 @@ class UserService implements UserServiceDTO {
 
       return {
         message: 'User profile fetched successfully!',
-        data: { user },
+        data: {
+          user: {
+            ...user,
+            id: uuidv4(),
+          },
+        },
       };
     }
   }
@@ -320,9 +339,42 @@ class UserService implements UserServiceDTO {
     if (!name && !email)
       throw ApiError.badRequest('No data provided to update user info!');
 
-    if (email && email === prevEmail)
-      throw ApiError.badRequest('Email already update to date!');
+    if (email && email === prevEmail) {
+      // update only name
+      if (!name || name === prevName)
+        throw ApiError.badRequest('Already up to date!');
 
+      // Update user info
+      const user = await prisma.user.update({
+        where: {
+          id: Number(userId),
+        },
+        data: {
+          name,
+        },
+      });
+
+      if (!user)
+        throw ApiError.internal(
+          'Failed to update user info. Please try again.',
+        );
+
+      // Omit password from response
+      const { password, ...userData } = user;
+
+      return {
+        message: 'User info updated successfully!',
+        data: {
+          user: {
+            ...userData,
+            id: uuidv4(),
+          },
+        },
+      };
+    }
+
+    // update name or email
+    // check if name sent is same as previous name
     if (name && name === prevName)
       throw ApiError.badRequest('Name already up to date!');
 
@@ -355,7 +407,12 @@ class UserService implements UserServiceDTO {
 
     return {
       message: 'User info updated successfully!',
-      data: { user: userData },
+      data: {
+        user: {
+          ...userData,
+          id: uuidv4(),
+        },
+      },
     };
   }
 
@@ -383,8 +440,8 @@ class UserService implements UserServiceDTO {
       throw ApiError.badRequest('Invalid current password! Please try again.');
 
     // Check against the cache-stored passwords
-    const prevPasswords = await redisService.get_values(
-      RedisService.createKey('PASSWORD', userId, '*'),
+    const prevPasswords = await redis.mget(
+      redisService.createKey('PASSWORD', userId, '*'),
     );
 
     if (prevPasswords && prevPasswords.length) {
@@ -413,7 +470,7 @@ class UserService implements UserServiceDTO {
 
     // Set cache for password
     await cacheService.set(
-      RedisService.createKey('PASSWORD', userId, uuidv4()),
+      redisService.createKey('PASSWORD', userId, uuidv4()),
       await pwdService.hash(newPassword),
       3600 * 24 * 7, // 7 days
     );
@@ -426,9 +483,7 @@ class UserService implements UserServiceDTO {
 
   async logout({ deviceId, userId }: UserDTO.Logout) {
     // Delete refresh token from Redis
-    await redisService.del(
-      RedisService.createKey('REFRESH_TOKEN', userId, deviceId),
-    );
+    await redis.del(redisService.createKey('REFRESH_TOKEN', userId, deviceId));
 
     return {
       message: 'Logged out successfully!',
@@ -438,13 +493,11 @@ class UserService implements UserServiceDTO {
 
   async logoutAllDevices({ userId }: UserDTO.LogoutAllDevices) {
     // Delete all sessions of user from Redis
-    await redisService.del_keys(
-      RedisService.createKey('REFRESH_TOKEN', userId, '*'),
-    );
+    await redis.del(redisService.createKey('REFRESH_TOKEN', userId, '*'));
 
     // Store the current timestamp in Redis (to invalidate access tokens)
-    await redisService.setex(
-      RedisService.createKey('INVALIDATED', userId),
+    await redis.setex(
+      redisService.createKey('INVALIDATED', userId),
       convertTimeStr(ACCESS_TOKEN_EXPIRY),
       (Date.now() / 1000).toString(),
     );

@@ -1,11 +1,4 @@
-import {
-  ChangePasswordSchema,
-  LoginSchema,
-  RegisterSchema,
-  SendVerificationEmailSchema,
-  UpdateUserInfoSchema,
-  VerifySchema,
-} from '#/api/v1/schema/users.schema';
+import { UserSchema } from '#/api/v1/schema/user.schema';
 import auth from '#/common/middlewares/auth.middleware';
 import deviceMiddleware from '#/common/middlewares/device.middleware';
 import validation from '#/common/middlewares/validation.middleware';
@@ -90,7 +83,7 @@ const router = express.Router();
 router.post(
   '/register',
   validation.requiredFields(['name', 'email', 'password']),
-  validation.zod(RegisterSchema),
+  validation.zod(UserSchema.Register),
   passwordMiddleware.hash,
   userController.register,
 );
@@ -145,7 +138,7 @@ router.post(
 router.post(
   '/login',
   validation.requiredFields(['email', 'password']),
-  validation.zod(LoginSchema),
+  validation.zod(UserSchema.Login),
   deviceMiddleware.getDeviceId,
   userController.login,
 );
@@ -187,7 +180,11 @@ router.post(
  *          - email
  *          - otpCode
  */
-router.post('/verify', validation.zod(VerifySchema), userController.verify);
+router.post(
+  '/verify',
+  validation.zod(UserSchema.Verify),
+  userController.verify,
+);
 
 /**
  * @openapi
@@ -224,7 +221,7 @@ router.post('/verify', validation.zod(VerifySchema), userController.verify);
  */
 router.post(
   '/send-verification-email',
-  validation.zod(SendVerificationEmailSchema),
+  validation.zod(UserSchema.SendVerificationEmail),
   userController.sendVerificationEmail,
 );
 
@@ -236,6 +233,13 @@ router.post(
  *       - Users
  *     summary: Refresh user token
  *     description: Refresh user token
+ *     parameters:
+ *       - in: header
+ *         name: Device-Id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Unique identifier for the device making the request
  *     responses:
  *       200:
  *         description: User token refreshed successfully
@@ -316,7 +320,7 @@ router.get('/user-info', auth.user(), userController.getUserInfo);
  */
 router.patch(
   '/update-info',
-  validation.zod(UpdateUserInfoSchema),
+  validation.zod(UserSchema.UpdateUserInfo),
   auth.user(),
   userController.updateUserInfo,
 );
@@ -360,7 +364,7 @@ router.patch(
 router.patch(
   '/change-password',
   validation.requiredFields(['currentPassword', 'newPassword']),
-  validation.zod(ChangePasswordSchema),
+  validation.zod(UserSchema.ChangePassword),
   auth.user(),
   userController.changePassword,
 );
@@ -373,6 +377,13 @@ router.patch(
  *       - Users
  *     summary: Logout a user
  *     description: Logout a user. This route allows a user to logout from the current session.
+ *     parameters:
+ *       - in: header
+ *         name: Device-Id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Unique identifier for the device making the request
  *     security:
  *       - bearerAuth: []
  *     responses:

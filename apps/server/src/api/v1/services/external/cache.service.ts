@@ -1,4 +1,4 @@
-import { redisService } from './redis.service';
+import redisService, { redis } from './redis.service';
 
 /**
  * Service for caching using Redis
@@ -15,7 +15,7 @@ class CacheService {
     expiryInSeconds?: number,
   ): Promise<string> {
     // Set cache
-    return await redisService.setex(
+    return await redis.setex(
       key,
       expiryInSeconds || 3600,
       JSON.stringify(value),
@@ -24,7 +24,7 @@ class CacheService {
 
   async get<T>(key: string): Promise<T | null> {
     // Get cache
-    const cache = await redisService.get(key);
+    const cache = await redis.get(key);
 
     // Parse cache
     const value = cache ? JSON.parse(cache) : null;
@@ -34,20 +34,20 @@ class CacheService {
 
   async update<T>(key: string, value: T): Promise<string> {
     // Fetch cache
-    const cache = await redisService.get(key);
+    const cache = await redis.get(key);
 
     // Check if cache exists. If not, set cache
     if (!cache) {
-      return await redisService.setex(key, 3600, JSON.stringify(value));
+      return await redis.setex(key, 3600, JSON.stringify(value));
     }
 
     // Update cache
-    return await redisService.set(key, JSON.stringify(value));
+    return await redis.set(key, JSON.stringify(value));
   }
 
   async delete(key: string): Promise<number> {
     // Delete cache
-    return await redisService.del(key);
+    return await redis.del(key);
   }
 }
 

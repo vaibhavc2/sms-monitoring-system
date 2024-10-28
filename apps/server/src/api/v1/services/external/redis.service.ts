@@ -4,16 +4,17 @@ import ct from '#/common/constants';
 import { asyncFnWrapper } from '#/common/utils/async-errors.util';
 import { logger } from '#/common/utils/logger.util';
 import { sanitizeParams } from '#/common/utils/sanitize.util';
-import { Callback, Redis } from 'ioredis';
+import { Redis } from 'ioredis';
 
-const { REDIS_URL, isDev } = envConfig;
+const { REDIS_URL } = envConfig;
 
-export class RedisService {
+class RedisService {
   private readonly redis: Redis;
 
   constructor() {
+    // this.redis = new Redis(REDIS_URL);
     this.redis = new Redis(REDIS_URL, {
-      keyPrefix: isDev ? ct.redisKeyPrefix : undefined,
+      keyPrefix: ct.redisKeyPrefix,
     });
 
     // Listen for the initial connect event
@@ -72,77 +73,29 @@ export class RedisService {
     return this.redis;
   }
 
-  static createKey(
+  createKey(
     keyName: keyof typeof REDIS_KEY_PREFIXES,
-    ...params: (number | string)[]
+    ...params: (string | number)[]
   ): string {
+    // Convert the params array to strings properly
+    const stringParams = params.map((param) => param?.toString());
+
     const prefix = REDIS_KEY_PREFIXES[keyName];
     if (!prefix) {
       throw new Error(`[REDIS] :: Invalid key name: ${keyName}`);
     }
-    // Convert numbers to strings
-    for (let param of params) {
-      if (typeof param !== 'string' && typeof param === 'number') {
-        param = param.toString();
-      }
-    }
 
     // Sanitize parameters to prevent injection attacks
-    const sanitizedParams = sanitizeParams(params as string[]);
-    // const sanitizedParams = sanitizeParams(params);
+    const sanitizedParams = sanitizeParams(stringParams);
 
     return `${prefix}::${sanitizedParams.join('::')}`;
   }
-
-  // private errorHandler = <T>(err: Error | null | undefined, res: T): void => {
-  //   if (err) {
-  //     logger.error('Redis error: ' + err);
-  //     throw new Error(err.message);
-  //   }
-  // };
 
   async ping() {
     return await this.redis.ping();
   }
 
-  async get(key: string): Promise<string | null> {
-    return await this.redis.get(key);
-  }
-
-  async set(key: string, value: string): Promise<string> {
-    return await this.redis.set(key, value);
-  }
-
-  async del(
-    keys: string[] | string,
-    ...otherKeys: (string | null)[]
-  ): Promise<number> {
-    let delKeys = Array.isArray(keys) ? keys : [keys];
-
-    if (otherKeys.length) {
-      delKeys = delKeys.concat(otherKeys as string[]);
-    }
-
-    return await this.redis.del(...delKeys);
-  }
-
-  async expire(key: string, seconds: number): Promise<number> {
-    return await this.redis.expire(key, seconds);
-  }
-
-  async setex(key: string, seconds: number, value: string): Promise<string> {
-    return await this.redis.setex(key, seconds, value);
-  }
-
-  async setnx(key: string, value: string): Promise<number> {
-    return await this.redis.setnx(key, value);
-  }
-
-  async hmset(key: string, values: Record<string, string>): Promise<'OK'> {
-    return await this.redis.hmset(key, values);
-  }
-
-  async hmset_with_expiry(
+  async setHashMapWithExpiry(
     key: string,
     seconds: number,
     values: Record<string, string>,
@@ -159,47 +112,9 @@ export class RedisService {
       }),
     );
   }
-
-  async hmget(key: string): Promise<(string | null)[]> {
-    return await this.redis.hmget(key);
-  }
-
-  async hgetall(key: string): Promise<Record<string, string>> {
-    return await this.redis.hgetall(key);
-  }
-
-  async hget(key: string, field: string): Promise<string | null> {
-    return await this.redis.hget(key, field);
-  }
-
-  async hset(key: string, field: string, value: string): Promise<number> {
-    return await this.redis.hset(key, field, value);
-  }
-
-  async hdel(key: string, field: string): Promise<number> {
-    return await this.redis.hdel(key, field);
-  }
-
-  async keys(pattern: string): Promise<string[]> {
-    return await this.redis.keys(pattern);
-  }
-
-  async del_keys(pattern: string): Promise<number> {
-    const keys = await this.keys(pattern);
-    if (!keys.length) return 0; // No keys found, nothing to delete
-    return await this.del(keys);
-  }
-
-  async mget(keys: string[]): Promise<(string | null)[]> {
-    return await this.redis.mget(keys);
-  }
-
-  async get_values(pattern: string): Promise<(string | null)[]> {
-    const keys = await this.keys(pattern);
-    if (!keys.length) return []; // No keys found, return empty array
-    return await this.mget(keys);
-  }
 }
 
-export const redisService = new RedisService();
+const redisService = new RedisService();
 export const redis = redisService.getRedisClient();
+
+export default redisService;

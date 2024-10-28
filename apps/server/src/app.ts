@@ -20,14 +20,10 @@ const { isDev } = envConfig;
 
 export class App {
   private app: Application;
-  public mongoConnection: mongoose.Connection;
 
   constructor() {
     // creating express app
     this.app = express();
-
-    // connecting to MongoDB
-    this.mongoConnection = mongoClient.connect();
   }
 
   public init() {

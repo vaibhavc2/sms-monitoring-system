@@ -9,11 +9,11 @@ import {
 } from '#/api/v1/entities/dtos/external/jwt.dto';
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
 import envConfig from '#/common/config/env.config';
-import { getErrorMessage } from '#/common/utils/error-extras.util';
 import { sign, TokenExpiredError, verify } from 'jsonwebtoken';
 import { logger } from '../../../../common/utils/logger.util';
 import { convertTimeStr } from '../../../../common/utils/time.util';
-import { RedisService, redisService } from './redis.service';
+import redisService, { redis } from './redis.service';
+import ApiError from '#/common/utils/api-error.util';
 
 const {
   ACCESS_TOKEN_SECRET,
@@ -74,10 +74,11 @@ class JWTService {
       if (err) {
         if (err instanceof TokenExpiredError) {
           logger.error('Token expired: ' + payload);
+          throw new ApiError(401, 'Token Expired!');
         } else {
           logger.error('Token verification error: ' + err);
+          throw new ApiError(401, 'Invalid Token!');
         }
-        reject(getErrorMessage(err) || 'Invalid Token or Token Expired!');
       }
       return resolve(payload);
     };
@@ -127,8 +128,8 @@ class JWTService {
     if (!upload) return token;
 
     // Store refresh token in Redis with expiry (store session)
-    await redisService.setex(
-      RedisService.createKey('REFRESH_TOKEN', userId, deviceId),
+    await redis.setex(
+      redisService.createKey('REFRESH_TOKEN', userId, deviceId),
       convertTimeStr(REFRESH_TOKEN_EXPIRY),
       token,
     );
@@ -161,8 +162,8 @@ class JWTService {
     if (!upload) return token;
 
     // Store activation token in Redis with expiry
-    await redisService.setex(
-      RedisService.createKey('ACTIVATION', email),
+    await redis.setex(
+      redisService.createKey('ACTIVATION', email),
       convertTimeStr(ACTIVATION_TOKEN_EXPIRY),
       token,
     );

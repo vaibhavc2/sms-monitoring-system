@@ -1,7 +1,7 @@
 import zodErrors from '#/common/utils/zod-errors.util';
 import * as z from 'zod';
 
-export const RegisterSchema = z.object({
+const Register = z.object({
   body: z.object({
     name: z
       .string({ required_error: zodErrors.required('Name') })
@@ -24,38 +24,47 @@ export const RegisterSchema = z.object({
   }),
 });
 
-export const LoginSchema = z.object({
+const Login = z.object({
   body: z.object({
-    email: RegisterSchema.shape.body.shape.email,
-    password: RegisterSchema.shape.body.shape.password,
+    email: Register.shape.body.shape.email,
+    password: Register.shape.body.shape.password,
   }),
 });
 
-export const SendVerificationEmailSchema = z.object({
+const SendVerificationEmail = z.object({
   body: z.object({
-    email: RegisterSchema.shape.body.shape.email,
+    email: Register.shape.body.shape.email,
   }),
 });
 
-export const VerifySchema = z.object({
+const Verify = z.object({
   body: z.object({
-    email: RegisterSchema.shape.body.shape.email,
+    email: Register.shape.body.shape.email,
     otpCode: z
       .string({ required_error: zodErrors.required('OTP Code') })
       .length(6, { message: 'OTP Code must be 6 characters long.' }),
   }),
 });
 
-export const UpdateUserInfoSchema = z.object({
+const UpdateUserInfo = z.object({
   body: z.object({
-    name: RegisterSchema.shape.body.shape.name.optional(),
-    email: RegisterSchema.shape.body.shape.email.optional(),
+    name: Register.shape.body.shape.name.optional(),
+    email: Register.shape.body.shape.email.optional(),
   }),
 });
 
-export const ChangePasswordSchema = z.object({
+const ChangePassword = z.object({
   body: z.object({
-    currentPassword: RegisterSchema.shape.body.shape.password,
-    newPassword: RegisterSchema.shape.body.shape.password,
+    currentPassword: Register.shape.body.shape.password,
+    newPassword: Register.shape.body.shape.password,
   }),
 });
+
+export const UserSchema = {
+  Register,
+  Login,
+  SendVerificationEmail,
+  Verify,
+  UpdateUserInfo,
+  ChangePassword,
+};

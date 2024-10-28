@@ -1,10 +1,12 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 import prisma from '../../prisma/prisma.client';
+import ct from '#/common/constants';
 
 export interface IProgram extends Document {
   _id: string | Schema.Types.ObjectId;
   name: string;
   description?: string;
+  fileName: string; // file name of the program on the server
   countryOperatorPairs: Array<Schema.Types.ObjectId>; // References country_operator_pairs._id
   activeSessions: Array<Schema.Types.ObjectId>; // References program_sessions._id
   createdBy: number; // Changed to number to match Prisma User.id
@@ -19,6 +21,7 @@ const ProgramSchema: Schema<IProgram> = new Schema(
   {
     name: {
       type: String,
+      unique: true,
       required: true,
       trim: true,
       index: true,
@@ -26,6 +29,11 @@ const ProgramSchema: Schema<IProgram> = new Schema(
     description: {
       type: String,
       required: false,
+      trim: true,
+    },
+    fileName: {
+      type: String,
+      required: true,
       trim: true,
     },
     countryOperatorPairs: [
@@ -48,9 +56,7 @@ const ProgramSchema: Schema<IProgram> = new Schema(
       type: Number, // Changed to Number type to store Prisma User.id
     },
   },
-  {
-    timestamps: true,
-  },
+  ct.mongo.baseOptions,
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving

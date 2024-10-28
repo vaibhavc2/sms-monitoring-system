@@ -70,4 +70,7 @@ class HTTPServer {
 }
 
 const appInstance = new App();
+
+// Connect to MongoDB and start the HTTP server
+(async () => await mongoClient.connect())();
 new HTTPServer(appInstance);
