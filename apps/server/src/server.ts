@@ -4,7 +4,7 @@ import { App } from './app';
 import envConfig from './common/config/env.config';
 import ct from './common/constants';
 import prisma from './common/db/prisma/prisma.client';
-import { redis } from './api/v1/services/external/redis.service';
+import { redis } from './api/v1/services/helper/redis.service';
 import { logger } from './common/utils/logger.util';
 import mongoose from 'mongoose';
 import mongoClient from './common/db/mongodb/mongo.client';

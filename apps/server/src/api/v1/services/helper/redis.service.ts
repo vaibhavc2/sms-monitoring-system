@@ -13,9 +13,7 @@ class RedisService {
 
   constructor() {
     // this.redis = new Redis(REDIS_URL);
-    this.redis = new Redis(REDIS_URL, {
-      keyPrefix: ct.redisKeyPrefix,
-    });
+    this.redis = new Redis(REDIS_URL);
 
     // Listen for the initial connect event
     this.redis.on('connect', () => {
@@ -81,6 +79,7 @@ class RedisService {
     const stringParams = params.map((param) => param?.toString());
 
     const prefix = REDIS_KEY_PREFIXES[keyName];
+
     if (!prefix) {
       throw new Error(`[REDIS] :: Invalid key name: ${keyName}`);
     }
@@ -89,6 +88,23 @@ class RedisService {
     const sanitizedParams = sanitizeParams(stringParams);
 
     return `${prefix}::${sanitizedParams.join('::')}`;
+  }
+
+  createKeyPattern(
+    keyName: keyof typeof REDIS_KEY_PREFIXES,
+    ...params: (string | number)[]
+  ): string {
+    // Convert the params array to strings properly
+    const stringParams = params.map((param) => param?.toString());
+
+    const prefix = REDIS_KEY_PREFIXES[keyName];
+
+    if (!prefix) {
+      throw new Error(`[REDIS] :: Invalid key name: ${keyName}`);
+    }
+
+    // here we don't sanitize the parameters
+    return `${prefix}::${stringParams.join('::')}`;
   }
 
   async ping() {
@@ -111,6 +127,31 @@ class RedisService {
         await this.redis.expire(key, seconds);
       }),
     );
+  }
+
+  async deleteKeysByPattern(pattern: string): Promise<void> {
+    // this is a non-blocking operation, so use this instead of KEYS
+    let cursor = '0';
+    do {
+      // SCAN through keys matching the pattern
+      const [nextCursor, keys] = await this.redis.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        '100', // Limit to 100 keys per iteration
+      );
+      cursor = nextCursor;
+
+      // If there are keys found, delete them
+      if (keys.length > 1) {
+        // Delete the keys in bulk
+        await this.redis.del(...keys);
+      } else if (keys.length === 1) {
+        // Delete the single key
+        await this.redis.del(keys[0]);
+      }
+    } while (cursor !== '0');
   }
 }
 

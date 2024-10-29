@@ -2,7 +2,7 @@ import envConfig from '#/common/config/env.config';
 import { Request, Response } from 'express';
 import { version, description } from '../../package.json';
 import { CorsOptions } from 'cors';
-import { redis } from '#/api/v1/services/external/redis.service';
+import { redis } from '#/api/v1/services/helper/redis.service';
 import { capitalizeTrimName } from './utils/capitalize-trim-name.util';
 // import chalk from 'chalk';
 
@@ -84,6 +84,10 @@ const ct = {
         },
       },
     },
+  },
+  encoding: {
+    alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+    base: 62,
   },
 };
 

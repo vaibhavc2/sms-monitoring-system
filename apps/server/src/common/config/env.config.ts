@@ -28,6 +28,7 @@ const config = {
     .get('ACTIVATION_TOKEN_EXPIRY')
     .default('10m') // 10 minutes by default
     .asString(),
+  CIPHER_OFFSET: env.get('CIPHER_OFFSET').default(99999).asIntPositive(),
 };
 
 const extraConfig = {

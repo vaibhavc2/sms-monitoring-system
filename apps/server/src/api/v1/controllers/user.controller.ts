@@ -2,14 +2,11 @@ import { UserDTO } from '#/api/v1/entities/dtos/user.dto';
 import envConfig from '#/common/config/env.config';
 import ApiError from '#/common/utils/api-error.util';
 import ApiResponse from '#/common/utils/api-response.util';
-import {
-  asyncErrorHandler,
-  wrapAsyncMethodsOfClass,
-} from '#/common/utils/async-errors.util';
+import { wrapAsyncMethodsOfClass } from '#/common/utils/async-errors.util';
 import { getCookieOptions } from '#/common/utils/cookie-options.util';
 import { RequestCookie } from '#/types';
 import { NextFunction, Request, Response } from 'express';
-import userService from '../services/user.service';
+import userService from '../services/logic/user.service';
 
 const { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } = envConfig;
 
@@ -100,24 +97,13 @@ class UserController {
     return new ApiResponse(res).success(message, data);
   }
 
-  async getProfile(req: Request, res: Response) {
-    if (!req.user) throw ApiError.unauthorized('Unauthenticated! Login first!');
-
-    const { message, data } =
-      (await userService.getProfile({
-        userId: req.user?.id,
-      })) ?? {};
-
-    return new ApiResponse(res).success(message, data);
-  }
-
   async getUserInfo(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized('Unauthenticated! Login first!');
 
-    const data = {
-      user: req.user,
-    };
-    const message = 'User info fetched successfully!';
+    const { message, data } =
+      (await userService.getUserInfo({
+        user: req.user,
+      })) ?? {};
 
     return new ApiResponse(res).success(message, data);
   }

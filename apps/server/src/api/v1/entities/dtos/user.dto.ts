@@ -36,8 +36,8 @@ export namespace UserDTO {
     refreshToken: string;
   }
 
-  export interface GetProfile {
-    userId: string | number;
+  export interface GetUserInfo {
+    user: UserWithoutPassword;
   }
 
   export interface UpdateUserInfo {

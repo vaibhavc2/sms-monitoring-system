@@ -252,25 +252,7 @@ router.post('/refresh', deviceMiddleware.getDeviceId, userController.refresh);
 
 /**
  * @openapi
- * /users/profile:
- *   get:
- *     tags:
- *       - Users
- *     summary: Get user profile
- *     description: Get user profile
- *     responses:
- *       200:
- *         description: User profile fetched successfully
- *       400:
- *         description: Bad request
- *       500:
- *         description: Internal server error
- */
-router.get('/profile', auth.user(), userController.getProfile);
-
-/**
- * @openapi
- * /users/user-info:
+ * /users/info:
  *   get:
  *     tags:
  *       - Users
@@ -284,7 +266,7 @@ router.get('/profile', auth.user(), userController.getProfile);
  *       500:
  *         description: Internal server error
  */
-router.get('/user-info', auth.user(), userController.getUserInfo);
+router.get('/info', auth.user(), userController.getUserInfo);
 
 /**
  * @openapi

@@ -2,16 +2,17 @@ import { UserDTO, UserWithoutPassword } from '#/api/v1/entities/dtos/user.dto';
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
 import envConfig from '#/common/config/env.config';
 import prisma from '#/common/db/prisma/prisma.client';
-import cacheService from '#/api/v1/services/external/cache.service';
-import jwtService from '#/api/v1/services/external/jwt.service';
-import otpService from '#/api/v1/services/external/otp.service';
-import pwdService from '#/api/v1/services/external/password.service';
-import redisService, { redis } from '#/api/v1/services/external/redis.service';
+import cacheService from '#/api/v1/services/helper/cache.service';
+import jwtService from '#/api/v1/services/helper/jwt.service';
+import otpService from '#/api/v1/services/helper/otp.service';
+import pwdService from '#/api/v1/services/helper/password.service';
+import redisService, { redis } from '#/api/v1/services/helper/redis.service';
 import ApiError from '#/common/utils/api-error.util';
 import { convertTimeStr } from '#/common/utils/time.util';
 import { StandardResponseDTO } from '#/types';
-import emailService from './external/email.service';
+import emailService from '../helper/email.service';
 import { v4 as uuidv4 } from 'uuid';
+import cipherService from '../helper/cipher.service';
 
 const { ACCESS_TOKEN_EXPIRY } = envConfig;
 
@@ -38,8 +39,8 @@ interface UserServiceDTO {
   refresh: (
     data: UserDTO.Refresh,
   ) => Promise<StandardResponseDTO<{ tokens: Tokens }>>;
-  getProfile: (
-    data: UserDTO.GetProfile,
+  getUserInfo: (
+    data: UserDTO.GetUserInfo,
   ) => Promise<StandardResponseDTO<{ user: UserWithoutPassword }>>;
   updateUserInfo: (
     data: UserDTO.UpdateUserInfo,
@@ -121,7 +122,7 @@ class UserService implements UserServiceDTO {
       data: {
         user: {
           ...userData,
-          id: uuidv4(),
+          id: cipherService.encodeId(user.id),
         },
       },
     };
@@ -158,18 +159,12 @@ class UserService implements UserServiceDTO {
 
     const { password: _, ...userData } = user;
 
-    // Set cache
-    await cacheService.set(
-      redisService.createKey('USER_PROFILE', user.id),
-      userData,
-    );
-
     return {
       message: 'User logged in successfully!',
       data: {
         user: {
           ...userData,
-          id: uuidv4(),
+          id: cipherService.encodeId(user.id),
         },
         tokens: { accessToken, refreshToken },
       },
@@ -250,7 +245,7 @@ class UserService implements UserServiceDTO {
       data: {
         user: {
           ...userData,
-          id: uuidv4(),
+          id: cipherService.encodeId(user.id),
         },
       },
     };
@@ -288,45 +283,17 @@ class UserService implements UserServiceDTO {
     };
   }
 
-  async getProfile({ userId }: UserDTO.GetProfile) {
-    // Cache key
-    const cacheKey = redisService.createKey('USER_PROFILE', userId);
-
-    // Fetch from cache
-    const cachedUser = await cacheService.get<UserWithoutPassword>(cacheKey);
-
+  async getUserInfo({ user }: UserDTO.GetUserInfo) {
     // Return cached data if exists
-    if (cachedUser) {
-      return {
-        message: 'User profile fetched successfully!',
-        data: { user: { ...cachedUser, id: uuidv4() } },
-      };
-    } else {
-      // Fetch from DB
-      const _user = await prisma.user.findUnique({
-        where: {
-          id: Number(userId),
+    return {
+      message: 'User Info fetched successfully!',
+      data: {
+        user: {
+          ...user,
+          id: cipherService.encodeId(Number(user.id)),
         },
-      });
-
-      if (!_user) throw ApiError.notFound('User not found!');
-
-      // Omit password from response
-      const { password, ...user } = _user;
-
-      // Set cache
-      await cacheService.set(cacheKey, user);
-
-      return {
-        message: 'User profile fetched successfully!',
-        data: {
-          user: {
-            ...user,
-            id: uuidv4(),
-          },
-        },
-      };
-    }
+      },
+    };
   }
 
   async updateUserInfo({
@@ -336,6 +303,7 @@ class UserService implements UserServiceDTO {
     prevEmail,
     prevName,
   }: UserDTO.UpdateUserInfo) {
+    // basic validation
     if (!name && !email)
       throw ApiError.badRequest('No data provided to update user info!');
 
@@ -356,7 +324,7 @@ class UserService implements UserServiceDTO {
 
       if (!user)
         throw ApiError.internal(
-          'Failed to update user info. Please try again.',
+          'Failed to update user info! Please try again.',
         );
 
       // Omit password from response
@@ -367,7 +335,7 @@ class UserService implements UserServiceDTO {
         data: {
           user: {
             ...userData,
-            id: uuidv4(),
+            id: cipherService.encodeId(user.id),
           },
         },
       };
@@ -410,7 +378,7 @@ class UserService implements UserServiceDTO {
       data: {
         user: {
           ...userData,
-          id: uuidv4(),
+          id: cipherService.encodeId(user.id),
         },
       },
     };
@@ -421,6 +389,7 @@ class UserService implements UserServiceDTO {
     currentPassword,
     newPassword,
   }: UserDTO.ChangePassword) {
+    // find user
     const user = await prisma.user.findUnique({
       where: {
         id: Number(userId),
@@ -493,13 +462,15 @@ class UserService implements UserServiceDTO {
 
   async logoutAllDevices({ userId }: UserDTO.LogoutAllDevices) {
     // Delete all sessions of user from Redis
-    await redis.del(redisService.createKey('REFRESH_TOKEN', userId, '*'));
+    await redisService.deleteKeysByPattern(
+      redisService.createKeyPattern('REFRESH_TOKEN', userId, '*'),
+    );
 
     // Store the current timestamp in Redis (to invalidate access tokens)
     await redis.setex(
       redisService.createKey('INVALIDATED', userId),
-      convertTimeStr(ACCESS_TOKEN_EXPIRY),
-      (Date.now() / 1000).toString(),
+      convertTimeStr(ACCESS_TOKEN_EXPIRY), // expiry time
+      (Date.now() / 1000).toString(), // value
     );
 
     return {

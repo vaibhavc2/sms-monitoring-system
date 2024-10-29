@@ -5,4 +5,11 @@ export namespace ProgramDTO {
     fileName: string;
     userId: number;
   }
+
+  export interface UpdateDetails {
+    name: string;
+    description?: string;
+    userId: number;
+    programId: string;
+  }
 }

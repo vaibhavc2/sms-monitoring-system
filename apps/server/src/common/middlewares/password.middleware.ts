@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import pwdService from '../../api/v1/services/external/password.service';
+import pwdService from '../../api/v1/services/helper/password.service';
 import ApiError from '../utils/api-error.util';
 import { logger } from '../utils/logger.util';
 import { asyncErrorHandler } from '../utils/async-errors.util';

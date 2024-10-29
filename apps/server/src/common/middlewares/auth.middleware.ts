@@ -1,7 +1,7 @@
 import { JWT_TOKENS } from '#/api/v1/entities/enums/jwt.tokens';
 import prisma from '#/common/db/prisma/prisma.client';
-import jwtService from '#/api/v1/services/external/jwt.service';
-import redisService, { redis } from '#/api/v1/services/external/redis.service';
+import jwtService from '#/api/v1/services/helper/jwt.service';
+import redisService, { redis } from '#/api/v1/services/helper/redis.service';
 import ApiError from '#/common/utils/api-error.util';
 import { asyncErrorHandler } from '#/common/utils/async-errors.util';
 import { NextFunction, Request, Response } from 'express';

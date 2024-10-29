@@ -1,7 +1,7 @@
 import ApiResponse from '#/common/utils/api-response.util';
 import { wrapAsyncMethodsOfClass } from '#/common/utils/async-errors.util';
 import { Request, Response } from 'express';
-import healthService from '../services/health.service';
+import healthService from '../services/logic/health.service';
 
 class HealthController {
   async index(req: Request, res: Response) {
