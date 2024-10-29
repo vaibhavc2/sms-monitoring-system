@@ -12,9 +12,6 @@ import versionMiddleware from './common/middlewares/version.middleware';
 import requestLogger from './common/middlewares/request-logger.middleware';
 import apiRouter from './global.routes';
 import { errorEmitter } from './common/utils/error-extras.util';
-import mongoose from 'mongoose';
-import mongoClient from './common/db/mongodb/mongo.client';
-import { logger } from './common/utils/logger.util';
 
 const { isDev } = envConfig;
 

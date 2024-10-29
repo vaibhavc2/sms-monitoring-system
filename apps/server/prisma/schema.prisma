@@ -29,6 +29,7 @@ model User {
   isVerified Boolean   @default(false)
   disabled   Boolean   @default(false)
   disabledAt DateTime?
+  // disabledBy Int?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 

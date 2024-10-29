@@ -2,8 +2,8 @@ import envConfig from '#/common/config/env.config';
 import { Request, Response } from 'express';
 import { version, description } from '../../package.json';
 import { CorsOptions } from 'cors';
-import { redis } from '#/api/v1/services/helper/redis.service';
 import { capitalizeTrimName } from './utils/capitalize-trim-name.util';
+import path from 'path';
 // import chalk from 'chalk';
 
 const { isDev, HOST, PORT, CLIENT_URL } = envConfig;

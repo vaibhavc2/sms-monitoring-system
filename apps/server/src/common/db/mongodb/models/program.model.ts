@@ -1,12 +1,14 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, AggregatePaginateModel, Schema } from 'mongoose';
 import prisma from '../../prisma/prisma.client';
 import ct from '#/common/constants';
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 export interface IProgram extends Document {
   _id: string | Schema.Types.ObjectId;
   name: string;
   description?: string;
   fileName: string; // file name of the program on the server
+  serverFileName: string; // file name of the program on the server
   countryOperatorPairs: Array<Schema.Types.ObjectId>; // References country_operator_pairs._id
   activeSessions: Array<Schema.Types.ObjectId>; // References program_sessions._id
   createdBy: number; // Changed to number to match Prisma User.id
@@ -15,7 +17,7 @@ export interface IProgram extends Document {
   updatedAt: Date;
 }
 
-export interface IProgramModel extends Model<IProgram> {}
+export interface IProgramModel extends AggregatePaginateModel<IProgram> {}
 
 const ProgramSchema: Schema<IProgram> = new Schema(
   {
@@ -32,6 +34,11 @@ const ProgramSchema: Schema<IProgram> = new Schema(
       trim: true,
     },
     fileName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    serverFileName: {
       type: String,
       required: true,
       trim: true,
@@ -91,7 +98,9 @@ ProgramSchema.pre('save', async function (next) {
   }
 });
 
-export const Program: Model<IProgram> = mongoose.model<IProgram>(
+ProgramSchema.plugin(mongooseAggregatePaginate);
+
+export const Program: IProgramModel = mongoose.model<IProgram, IProgramModel>(
   'Program',
   ProgramSchema,
 );

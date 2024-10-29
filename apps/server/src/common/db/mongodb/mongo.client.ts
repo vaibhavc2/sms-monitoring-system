@@ -91,6 +91,6 @@ class MongoClient {
 }
 
 const mongoClient = new MongoClient();
-export const mongoModels = mongoClient.models;
+export const mongo = mongoClient.models;
 
 export default mongoClient;

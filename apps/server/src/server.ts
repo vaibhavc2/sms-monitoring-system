@@ -6,7 +6,6 @@ import ct from './common/constants';
 import prisma from './common/db/prisma/prisma.client';
 import { redis } from './api/v1/services/helper/redis.service';
 import { logger } from './common/utils/logger.util';
-import mongoose from 'mongoose';
 import mongoClient from './common/db/mongodb/mongo.client';
 
 const { PORT, NODE_ENV, isDev, isProd } = envConfig;

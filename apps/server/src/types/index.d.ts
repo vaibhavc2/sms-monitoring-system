@@ -8,7 +8,8 @@ declare global {
       user?: Omit<User, 'password'>;
       token?: string;
       deviceId?: string;
-      originalFileName?: string;
+      fileName?: string;
+      serverFileName?: string;
       // body: {
       //   // Include other properties from req.body you want to type here
       // } & Request['body']; // This ensures we extend the existing body type rather than overwrite it

@@ -4,7 +4,7 @@ import prisma from '../../prisma/prisma.client';
 export interface IProgramSession extends Document {
   _id: string | Schema.Types.ObjectId;
   programId: Schema.Types.ObjectId; // References Program._id
-  countryOperatorPairs: Array<Schema.Types.ObjectId>; // References country_operator_pairs._id
+  countryOperatorPair: Array<Schema.Types.ObjectId>; // References country_operator_pairs._id
   sessionName: string;
   status: 'running' | 'stopped' | 'restarted';
   startTime: Date;
@@ -25,7 +25,7 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
       ref: 'Program',
       required: true,
     },
-    countryOperatorPairs: [
+    countryOperatorPair: [
       {
         type: Schema.Types.ObjectId,
         ref: 'CountryOperatorPair',
