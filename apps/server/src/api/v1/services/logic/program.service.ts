@@ -6,6 +6,9 @@ import cipherService from '../helper/cipher.service';
 import fileService from '../helper/file.service';
 import prisma from '#/common/db/prisma/prisma.client';
 import mongoose from 'mongoose';
+import programRepository from '../../repositories/program.repository';
+import userRepository from '../../repositories/user.repository';
+import lookup from '../helper/lookup-creator.service';
 
 interface ProgramServiceDTO {}
 
@@ -162,156 +165,40 @@ class ProgramService implements ProgramServiceDTO {
   }
 
   async getDetails({ programId }: ProgramDTO.Common) {
-    // Aggregate query to fetch detailed program information, including nested session and user data
-    const program = await mongo.Program.aggregate([
-      {
-        // Step 1: Match the specific program by its ID
-        $match: { _id: new mongoose.Types.ObjectId(programId) },
-      },
-      {
-        // Step 2: Lookup to populate details for `countryOperatorPairs` in the `Program`
-        $lookup: {
-          from: 'countryoperatorpairs', // Target collection to join
-          localField: 'countryOperatorPairs', // Local field containing ObjectId references
-          foreignField: '_id', // Foreign field in the target collection
-          as: 'countryOperatorPairsDetails', // Output array field to store the populated data
-        },
-      },
-      {
-        // Step 3: Lookup to populate `activeSessions` with session details
-        $lookup: {
-          from: 'programsessions', // Target collection to join
-          localField: 'activeSessions', // Local field with ObjectId references
-          foreignField: '_id', // Foreign field in the target collection
-          as: 'activeSessionsDetails', // Output array field to store populated data
-        },
-      },
-      {
-        // Step 4: Unwind `activeSessionsDetails` to process each session individually in the next lookup
-        $unwind: {
-          path: '$activeSessionsDetails', // Array field to unwind
-          preserveNullAndEmptyArrays: true, // Keep documents without `activeSessionsDetails`
-        },
-      },
-      {
-        // Step 5: Nested lookup to populate `countryOperatorPair` details within each session
-        $lookup: {
-          from: 'countryoperatorpairs', // Target collection for nested data
-          localField: 'activeSessionsDetails.countryOperatorPair', // Field within each session
-          foreignField: '_id', // Foreign field in `countryoperatorpairs` collection
-          as: 'activeSessionsDetails.countryOperatorPairDetails', // Output field for nested data
-        },
-      },
-      {
-        // Step 6: Group back into a single document after unwind and nested lookups
-        $group: {
-          _id: '$_id', // Re-group by the original program ID
-          name: { $first: '$name' }, // Retain program name
-          description: { $first: '$description' }, // Retain program description
-          fileName: { $first: '$fileName' }, // Retain original file name
-          serverFileName: { $first: '$serverFileName' }, // Retain server file name
-          countryOperatorPairsDetails: {
-            $first: '$countryOperatorPairsDetails',
-          }, // Include `countryOperatorPairs` details
-          activeSessionsDetails: { $push: '$activeSessionsDetails' }, // Rebuild `activeSessionsDetails` array
-          createdBy: { $first: '$createdBy' }, // Retain createdBy user ID
-          updatedBy: { $first: '$updatedBy' }, // Retain updatedBy user ID (if exists)
-          createdAt: { $first: '$createdAt' }, // Include timestamp for creation
-          updatedAt: { $first: '$updatedAt' }, // Include timestamp for last update
-        },
-      },
-      {
-        // Step 10: Project the final shape of the document, including only relevant fields
-        $project: {
-          _id: 1, // Program ID
-          name: 1, // Program name
-          description: 1, // Program description
-          fileName: 1, // Original file name
-          serverFileName: 1, // Server file name
-          countryOperatorPairsDetails: 1, // Populated country operator pairs
-          activeSessionsDetails: 1, // Populated active sessions with nested country operator pairs
-          createdBy: 1,
-          updatedBy: 1,
-          createdAt: 1, // Created at timestamp
-          updatedAt: 1, // Last updated timestamp
-        },
-      },
-    ]);
+    // fetch program details from the database
+    const program = await programRepository.getDetailedProgram(programId);
 
-    if (program[0].createdBy === program[0].updatedBy) {
-      const userId = program[0].createdBy;
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isVerified: true,
-          disabled: true,
-          disabledAt: true,
-        },
-      });
+    if (!program) throw new ApiError(404, 'Program not found!');
 
-      return {
-        message: 'Program details retrieved successfully',
-        data: {
-          program: {
-            ...program[0],
-            id: program[0]._id,
-            _id: undefined,
-            createdBy: {
-              ...user,
-              id: cipherService.encodeId(userId),
-            },
-            updatedBy: {
-              ...user,
-              id: cipherService.encodeId(userId),
-            },
-          },
-        },
-      };
-    }
+    let userIds: number[] = [];
 
-    const userIds = [program[0].createdBy, program[0].updatedBy];
+    if (program.createdBy === program.updatedBy) {
+      userIds.push(program.createdBy);
+    } else userIds = [program.createdBy, program.updatedBy];
 
     // fetch user details from prisma for both createdBy and updatedBy in a single query
-    const users = await prisma.user.findMany({
-      where: {
-        id: {
-          in: userIds,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isVerified: true,
-        disabled: true,
-        disabledAt: true,
-      },
-    });
+    const users = await userRepository.getUsersByIds(userIds);
 
-    if (program.length === 0) throw new ApiError(404, 'Program not found!');
+    // create a lookup object for user details
+    const userLookup = lookup.createById(users);
 
     return {
       message: 'Program details retrieved successfully',
       data: {
         program: {
-          ...program[0],
-          id: program[0]._id,
+          ...program,
+          id: program._id,
           _id: undefined,
           createdBy: {
-            ...users[0],
-            id: cipherService.encodeId(users[0].id),
+            ...userLookup[program.createdBy],
+            id: cipherService.encodeId(program.createdBy),
           },
           updatedBy:
-            users.length === 1
+            program.updatedBy === null
               ? null
               : {
-                  ...users[1],
-                  id: cipherService.encodeId(users[1].id),
+                  ...userLookup[program.updatedBy],
+                  id: cipherService.encodeId(program.updatedBy),
                 },
         },
       },
@@ -325,63 +212,14 @@ class ProgramService implements ProgramServiceDTO {
     sortOrder,
     query,
   }: ProgramDTO.GetPrograms) {
-    const aggregatePipeline = [
-      {
-        $match: {
-          ...(query && {
-            name: { $regex: String(query) || '', $options: 'i' },
-            description: { $regex: String(query) || '', $options: 'i' },
-          }),
-        },
-      }, // Apply filters based on query
-      {
-        $lookup: {
-          from: 'countryoperatorpairs', // Adjust collection name if needed
-          localField: 'countryOperatorPairs',
-          foreignField: '_id',
-          as: 'countryOperatorPairsDetails',
-        },
-      },
-      {
-        $lookup: {
-          from: 'programsessions', // Adjust collection name if needed
-          localField: 'activeSessions',
-          foreignField: '_id',
-          as: 'activeSessionsDetails',
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          description: 1,
-          fileName: 1,
-          serverFileName: 1,
-          countryOperatorPairsDetails: 1,
-          activeSessionsDetails: 1,
-          createdBy: 1,
-          updatedBy: 1,
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      },
-    ];
-
-    // Define the options for pagination and sorting
-    const options = {
-      page: page ? parseInt(page as string, 10) : 1,
-      limit: limit ? parseInt(limit as string, 10) : 10,
-      sort: sortBy &&
-        sortOrder && {
-          [sortBy as string]: sortOrder === 'desc' ? -1 : 1,
-        },
-    };
-
-    // Execute the paginated aggregation
-    const programs = await mongo.Program.aggregatePaginate(
-      mongo.Program.aggregate(aggregatePipeline),
-      options,
-    );
+    // Fetch paginated programs from the database
+    const programs = await programRepository.getPaginatedPrograms({
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      query,
+    });
 
     if (programs.totalDocs === 0) throw new ApiError(404, 'No programs found!');
 
@@ -393,29 +231,10 @@ class ProgramService implements ProgramServiceDTO {
     });
 
     // Fetch user details from Prisma based on the unique IDs
-    const users = await prisma.user.findMany({
-      where: { id: { in: Array.from(userIds) } },
-      select: { id: true, name: true, email: true }, // Select necessary fields
-    });
+    const users = await userRepository.getUsersByIds(Array.from(userIds));
 
-    // Map user data to a lookup object for efficient retrieval
-    const userLookup = users.reduce(
-      (acc, user) => {
-        acc[user.id] = {
-          ...user,
-          id: cipherService.encodeId(user.id),
-        };
-        return acc;
-      },
-      {} as Record<
-        number,
-        {
-          id: string;
-          name: string;
-          email: string;
-        }
-      >,
-    );
+    // Create a lookup object for user details
+    const userLookup = lookup.createById(users);
 
     // Attach user details to each program
     const enrichedPrograms = programs.docs.map((program) => ({
