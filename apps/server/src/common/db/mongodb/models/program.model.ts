@@ -78,7 +78,7 @@ ProgramSchema.pre('save', async function (next) {
     });
 
     if (!createdByUser) {
-      throw new Error('Created by user not found in Prisma database');
+      throw new Error('CreatedBy user not found in Prisma database');
     }
 
     // Check if updatedBy user exists (if provided)
@@ -88,7 +88,7 @@ ProgramSchema.pre('save', async function (next) {
       });
 
       if (!updatedByUser) {
-        throw new Error('Updated by user not found in Prisma database');
+        throw new Error('UpdatedBy user not found in Prisma database');
       }
     }
 

@@ -1,10 +1,12 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, AggregatePaginateModel, Schema } from 'mongoose';
 import prisma from '../../prisma/prisma.client';
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
+import ct from '#/common/constants';
 
 export interface IProgramSession extends Document {
   _id: string | Schema.Types.ObjectId;
   programId: Schema.Types.ObjectId; // References Program._id
-  countryOperatorPair: Array<Schema.Types.ObjectId>; // References country_operator_pairs._id
+  countryOperatorPairId: Schema.Types.ObjectId; // References country_operator_pairs._id
   sessionName: string;
   status: 'running' | 'stopped' | 'restarted';
   startTime: Date;
@@ -16,7 +18,8 @@ export interface IProgramSession extends Document {
   updatedAt: Date;
 }
 
-export interface IProgramSessionModel extends Model<IProgramSession> {}
+export interface IProgramSessionModel
+  extends AggregatePaginateModel<IProgramSession> {}
 
 const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
   {
@@ -25,7 +28,7 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
       ref: 'Program',
       required: true,
     },
-    countryOperatorPair: [
+    countryOperatorPairId: [
       {
         type: Schema.Types.ObjectId,
         ref: 'CountryOperatorPair',
@@ -39,20 +42,18 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
     status: {
       type: String,
       enum: ['running', 'stopped', 'restarted'],
-      default: 'running',
+      default: 'stopped',
     },
     startTime: {
       type: Date,
-      required: true,
     },
     endTime: {
       type: Date,
-      required: false,
     },
     lastAction: {
       type: String,
       enum: ['started', 'stopped', 'restarted'],
-      default: 'started',
+      default: 'stopped',
     },
     createdBy: {
       type: Number, // Changed to Number type to store Prisma User.id
@@ -62,9 +63,7 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
       type: Number, // Changed to Number type to store Prisma User.id
     },
   },
-  {
-    timestamps: true,
-  },
+  ct.mongo.baseOptions,
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving
@@ -76,7 +75,7 @@ ProgramSessionSchema.pre('save', async function (next) {
     });
 
     if (!createdByUser) {
-      throw new Error('Created by user not found in Prisma database');
+      throw new Error('CreatedBy user not found in Prisma database');
     }
 
     // Check if updatedBy user exists (if provided)
@@ -86,7 +85,7 @@ ProgramSessionSchema.pre('save', async function (next) {
       });
 
       if (!updatedByUser) {
-        throw new Error('Updated by user not found in Prisma database');
+        throw new Error('UpdatedBy user not found in Prisma database');
       }
     }
 
@@ -96,5 +95,9 @@ ProgramSessionSchema.pre('save', async function (next) {
   }
 });
 
-export const ProgramSession: Model<IProgramSession> =
-  mongoose.model<IProgramSession>('ProgramSession', ProgramSessionSchema);
+ProgramSessionSchema.plugin(mongooseAggregatePaginate);
+
+export const ProgramSession: IProgramSessionModel = mongoose.model<
+  IProgramSession,
+  IProgramSessionModel
+>('ProgramSession', ProgramSessionSchema);

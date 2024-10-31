@@ -4,22 +4,22 @@ import * as z from 'zod';
 const Register = z.object({
   body: z.object({
     name: z
-      .string({ required_error: zodErrors.required('Name') })
-      .min(3, { message: zodErrors.minString('Name', 3) })
-      .max(30, { message: zodErrors.largeString('Name', 30) })
+      .string({ required_error: zodErrors.required('name') })
+      .min(3, { message: zodErrors.minString('name', 3) })
+      .max(30, { message: zodErrors.largeString('name', 30) })
       .regex(/^[a-zA-Z\s]*$/, {
-        message: 'Name can only contain: letters and spaces.',
+        message: `Field 'name' can only contain: letters and spaces.`,
       }),
     email: z
-      .string({ required_error: zodErrors.required('Email') })
-      .max(255, { message: zodErrors.largeString('Email', 255) })
+      .string({ required_error: zodErrors.required('email') })
+      .max(255, { message: zodErrors.largeString('email', 255) })
       .email({ message: 'Enter a valid email.' }),
     password: z
-      .string({ required_error: zodErrors.required('Password') })
-      .min(6, { message: zodErrors.minString('Password', 6) })
-      .max(30, { message: zodErrors.largeString('Password', 30) })
+      .string({ required_error: zodErrors.required('password') })
+      .min(6, { message: zodErrors.minString('password', 6) })
+      .max(30, { message: zodErrors.largeString('password', 30) })
       .regex(/^(?=.*\d)(?=.*\W).*$/, {
-        message: 'Password must contain at least a digit, and a symbol.',
+        message: `Field 'password' must contain at least a digit, and a symbol.`,
       }),
   }),
 });
@@ -41,8 +41,8 @@ const Verify = z.object({
   body: z.object({
     email: Register.shape.body.shape.email,
     otpCode: z
-      .string({ required_error: zodErrors.required('OTP Code') })
-      .length(6, { message: 'OTP Code must be 6 characters long.' }),
+      .string({ required_error: zodErrors.required('otpCode') })
+      .length(6, { message: `Field 'otpCode' must be 6 characters long.` }),
   }),
 });
 

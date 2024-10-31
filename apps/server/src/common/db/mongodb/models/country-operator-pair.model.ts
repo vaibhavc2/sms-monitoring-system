@@ -1,21 +1,24 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { AggregatePaginateModel, Document, Schema } from 'mongoose';
 import prisma from '../../prisma/prisma.client';
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
+import ct from '#/common/constants';
 
 export interface ICountryOperatorPair extends Document {
   _id: string | Schema.Types.ObjectId;
-  programId: Schema.Types.ObjectId; // References Program._id
-  country: string;
-  operator: string;
-  active: boolean;
+  programId: Schema.Types.ObjectId;
+  countryId: Schema.Types.ObjectId;
+  operatorId: Schema.Types.ObjectId;
+  disabled: boolean;
+  disabledBy?: number;
   highPriority: boolean;
-  createdBy: number; // Changed to number to match Prisma User.id
-  updatedBy?: number; // Changed to number to match Prisma User.id
+  createdBy: number;
+  updatedBy?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ICountryOperatorPairModel
-  extends Model<ICountryOperatorPair> {}
+  extends AggregatePaginateModel<ICountryOperatorPair> {}
 
 const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
   {
@@ -24,17 +27,17 @@ const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
       ref: 'Program',
       required: true,
     },
-    country: {
-      type: String,
+    countryId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Country',
       required: true,
-      trim: true,
     },
-    operator: {
-      type: String,
+    operatorId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Operator',
       required: true,
-      trim: true,
     },
-    active: {
+    disabled: {
       type: Boolean,
       default: false,
     },
@@ -42,17 +45,18 @@ const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
       type: Boolean,
       default: false,
     },
+    disabledBy: {
+      type: Number,
+    },
     createdBy: {
-      type: Number, // Changed to Number type to store Prisma User.id
+      type: Number,
       required: true,
     },
     updatedBy: {
-      type: Number, // Changed to Number type to store Prisma User.id
+      type: Number,
     },
   },
-  {
-    timestamps: true,
-  },
+  ct.mongo.baseOptions,
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving
@@ -64,7 +68,7 @@ CountryOperatorPairSchema.pre('save', async function (next) {
     });
 
     if (!createdByUser) {
-      throw new Error('Created by user not found in Prisma database');
+      throw new Error('CreatedBy user not found in Prisma database');
     }
 
     // Check if updatedBy user exists (if provided)
@@ -74,7 +78,7 @@ CountryOperatorPairSchema.pre('save', async function (next) {
       });
 
       if (!updatedByUser) {
-        throw new Error('Updated by user not found in Prisma database');
+        throw new Error('UpdatedBy user not found in Prisma database');
       }
     }
 
@@ -84,8 +88,9 @@ CountryOperatorPairSchema.pre('save', async function (next) {
   }
 });
 
-export const CountryOperatorPair: Model<ICountryOperatorPair> =
-  mongoose.model<ICountryOperatorPair>(
-    'CountryOperatorPair',
-    CountryOperatorPairSchema,
-  );
+CountryOperatorPairSchema.plugin(mongooseAggregatePaginate);
+
+export const CountryOperatorPair: ICountryOperatorPairModel = mongoose.model<
+  ICountryOperatorPair,
+  ICountryOperatorPairModel
+>('CountryOperatorPair', CountryOperatorPairSchema);

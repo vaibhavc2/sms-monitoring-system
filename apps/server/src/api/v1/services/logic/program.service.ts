@@ -10,11 +10,7 @@ import programRepository from '../../repositories/program.repository';
 import userRepository from '../../repositories/user.repository';
 import lookup from '../helper/lookup-creator.service';
 
-interface ProgramServiceDTO {}
-
-class ProgramService implements ProgramServiceDTO {
-  constructor() {}
-
+class ProgramService {
   async upload({
     name,
     description,
@@ -223,18 +219,8 @@ class ProgramService implements ProgramServiceDTO {
 
     if (programs.totalDocs === 0) throw new ApiError(404, 'No programs found!');
 
-    // Extract unique user IDs from createdBy and updatedBy fields
-    const userIds = new Set<number>();
-    programs.docs.forEach((program) => {
-      userIds.add(program.createdBy);
-      if (program.updatedBy) userIds.add(program.updatedBy);
-    });
-
-    // Fetch user details from Prisma based on the unique IDs
-    const users = await userRepository.getUsersByIds(Array.from(userIds));
-
-    // Create a lookup object for user details
-    const userLookup = lookup.createById(users);
+    // create a user lookup object
+    const userLookup = await userRepository.getUserLookup(programs.docs);
 
     // Attach user details to each program
     const enrichedPrograms = programs.docs.map((program) => ({

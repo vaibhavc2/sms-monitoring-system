@@ -8,32 +8,23 @@ class ZodError {
 
     if (isDev || detailedError) {
       if (typeof fieldName === 'string') {
-        return (
-          fieldName.charAt(0).toUpperCase() +
-          fieldName.slice(1) +
-          " can't be empty! " +
-          errString
-        );
+        return `Field '${fieldName}' can't be empty! ${errString}`;
       } else {
-        const firstFieldName = fieldName[0];
-        const capitalizedFirstFieldName =
-          firstFieldName.charAt(0).toUpperCase() + firstFieldName.slice(1);
-        const restOfFieldNames = fieldName.slice(1);
-        return (
-          [capitalizedFirstFieldName, ...restOfFieldNames].join(', ') +
-          " can't be empty! " +
-          errString
-        );
+        const fields = fieldName.map((field) => {
+          field = "'" + field + "'";
+          return field;
+        });
+        return `Fields: ${fields.join(', ')} can't be empty! ${errString}`;
       }
     } else return errString;
   };
 
   largeString = (fieldName: string, max: number) => {
-    return fieldName + ' must not exceed ' + max + ' characters.';
+    return `Field '${fieldName}' must be less than ${max} characters.`;
   };
 
   minString = (fieldName: string, min: number) => {
-    return fieldName + ' must be at least ' + min + ' characters.';
+    return `Field '${fieldName}' must be atleast ${min} characters.`;
   };
 }
 

@@ -7,21 +7,29 @@ import {
   IProgramSession,
   ProgramSession,
 } from './models/program-session.model';
-import { IPriorityPair, PriorityPair } from './models/priority-pair.model';
 import {
   ICountryOperatorPair,
   CountryOperatorPair,
 } from './models/country-operator-pair.model';
+import { Country, ICountry } from './models/country.model';
+import { Operator, IOperator } from './models/operator.model';
 
 const { MONGO_URI, MONGO_DB_NAME } = envConfig;
 
-export type { IProgram, IProgramSession, ICountryOperatorPair, IPriorityPair };
+export type {
+  IProgram,
+  IProgramSession,
+  ICountryOperatorPair,
+  ICountry,
+  IOperator,
+};
 
 type Models = {
   Program: typeof Program;
   ProgramSession: typeof ProgramSession;
-  PriorityPair: typeof PriorityPair;
   CountryOperatorPair: typeof CountryOperatorPair;
+  Country: typeof Country;
+  Operator: typeof Operator;
 };
 
 class MongoClient {
@@ -31,8 +39,9 @@ class MongoClient {
     this.models = {
       Program,
       ProgramSession,
-      PriorityPair,
       CountryOperatorPair,
+      Country,
+      Operator,
     };
   }
 

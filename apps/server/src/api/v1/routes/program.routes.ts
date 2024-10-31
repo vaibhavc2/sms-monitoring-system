@@ -2,8 +2,8 @@ import { Router } from 'express';
 import programController from '../controllers/program.controller';
 import validation from '#/common/middlewares/validation.middleware';
 import auth from '#/common/middlewares/auth.middleware';
-import { ProgramSchema } from '../schema/program.schema';
 import fileMiddleware from '#/common/middlewares/file.middleware';
+import { Name } from '../schema/common/index.schema';
 
 const router = Router();
 
@@ -60,7 +60,7 @@ router.post(
   '/upload',
   auth.admin(),
   fileMiddleware.upload,
-  validation.zod(ProgramSchema.Upload),
+  validation.zod(Name),
   programController.upload,
 );
 
@@ -118,7 +118,7 @@ router.post(
 router.patch(
   '/details/:programId',
   auth.admin(),
-  validation.zod(ProgramSchema.Upload),
+  validation.zod(Name),
   programController.updateDetails,
 );
 

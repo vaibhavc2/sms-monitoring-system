@@ -143,10 +143,11 @@ class UserController {
   async logout(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized('Unauthenticated! Login first!');
 
-    const { message, data } = await userService.logout({
-      userId: req.user?.id,
-      deviceId: req.deviceId as string,
-    });
+    const { message, data } =
+      (await userService.logout({
+        userId: req.user?.id,
+        deviceId: req.deviceId as string,
+      })) ?? {};
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
@@ -156,9 +157,10 @@ class UserController {
   async logoutAllDevices(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized('Unauthenticated! Login first!');
 
-    const { message, data } = await userService.logoutAllDevices({
-      userId: req.user?.id,
-    });
+    const { message, data } =
+      (await userService.logoutAllDevices({
+        userId: req.user?.id,
+      })) ?? {};
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');

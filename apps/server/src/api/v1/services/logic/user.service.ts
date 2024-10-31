@@ -16,42 +16,7 @@ import cipherService from '../helper/cipher.service';
 
 const { ACCESS_TOKEN_EXPIRY } = envConfig;
 
-interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface UserServiceDTO {
-  register: (
-    data: UserDTO.Register,
-  ) => Promise<StandardResponseDTO<{ user: UserWithoutPassword }>>;
-  login: (
-    data: UserDTO.Login,
-  ) => Promise<
-    StandardResponseDTO<{ user: UserWithoutPassword; tokens: Tokens }>
-  >;
-  sendVerificationEmail: (
-    data: UserDTO.SendVerificationEmail,
-  ) => Promise<StandardResponseDTO<{ email: string }>>;
-  verify: (
-    data: UserDTO.Verify,
-  ) => Promise<StandardResponseDTO<{ user: UserWithoutPassword }>>;
-  refresh: (
-    data: UserDTO.Refresh,
-  ) => Promise<StandardResponseDTO<{ tokens: Tokens }>>;
-  getUserInfo: (
-    data: UserDTO.GetUserInfo,
-  ) => Promise<StandardResponseDTO<{ user: UserWithoutPassword }>>;
-  updateUserInfo: (
-    data: UserDTO.UpdateUserInfo,
-  ) => Promise<StandardResponseDTO<{ user: UserWithoutPassword }>>;
-  logout: (data: UserDTO.Logout) => Promise<StandardResponseDTO<null>>;
-  logoutAllDevices: (
-    data: UserDTO.LogoutAllDevices,
-  ) => Promise<StandardResponseDTO<null>>;
-}
-
-class UserService implements UserServiceDTO {
+class UserService {
   private async generateActivationTokenAndSendEmail(email: string) {
     // Generate OTP code
     const otpCode = otpService.generateSecureOTP(6).string;
