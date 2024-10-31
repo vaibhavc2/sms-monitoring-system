@@ -240,7 +240,7 @@ class CountryOperatorPairRepository {
     const options = {
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
-      sort: { [sortBy]: sortOrder === 'asc' ? 1 : -1 },
+      sort: { [sortBy || 'updatedAt']: sortOrder === 'asc' ? 1 : -1 },
     };
 
     const countryOperatorPairs =

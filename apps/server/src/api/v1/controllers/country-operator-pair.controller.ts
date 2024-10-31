@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { wrapAsyncMethodsOfClass } from '#/common/utils/async-errors.util';
 import { CountryOperatorPairDTO } from '../entities/dtos/country-operator-pair.dto';
 import countryOperatorPairService from '../services/logic/country-operator-pair.service';
+import ApiError from '#/common/utils/api-error.util';
 
 class CountryOperatorPairController {
   async create(req: Request, res: Response) {
@@ -76,11 +77,15 @@ class CountryOperatorPairController {
 
   async searchById(req: Request, res: Response) {
     const { programId, userId, countryId, operatorId } = req.query as {
-      programId: string;
-      userId: string;
-      countryId: string;
-      operatorId: string;
+      programId?: string;
+      userId?: string;
+      countryId?: string;
+      operatorId?: string;
     };
+
+    if (!programId || !userId || !countryId || !operatorId) {
+      throw ApiError.badRequest('Invalid or no query parameters');
+    }
 
     const { message, data } =
       (await countryOperatorPairService.searchById({
@@ -91,12 +96,11 @@ class CountryOperatorPairController {
   }
 
   async getPaginatedResults(req: Request, res: Response) {
-    const { sortOrder, limit, query, sortBy, page } = req.query as {
+    const { sortOrder, limit, sortBy, page } = req.query as {
       page: string;
       limit: string;
       sortBy: string;
       sortOrder: string;
-      query: string;
     };
 
     const { message, data } =

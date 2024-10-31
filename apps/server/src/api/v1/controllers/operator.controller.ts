@@ -63,8 +63,8 @@ class OperatorController {
 
     const { message, data } =
       (await operatorService.getPaginatedResults({
-        page: page,
-        limit: limit,
+        page,
+        limit,
         sortBy: 'name',
         sortOrder,
         query,

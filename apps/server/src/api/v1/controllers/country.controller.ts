@@ -62,8 +62,8 @@ class CountryController {
 
     const { message, data } =
       (await countryService.getPaginatedResults({
-        page: page,
-        limit: limit,
+        page,
+        limit,
         sortBy: 'name',
         sortOrder,
         query,

@@ -32,10 +32,10 @@ export namespace CountryOperatorPairDTO {
 
   export interface SearchById {
     query: {
-      programId: string;
-      userId: string;
-      countryId: string;
-      operatorId: string;
+      programId?: string;
+      userId?: string;
+      countryId?: string;
+      operatorId?: string;
     };
   }
 
