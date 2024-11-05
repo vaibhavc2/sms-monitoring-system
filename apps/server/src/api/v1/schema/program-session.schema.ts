@@ -7,9 +7,9 @@ const Create = z.object({
     countryOperatorPairId: z.string({
       required_error: zodErrors.required('countryOperatorPairId'),
     }),
-    sessionName: z
-      .string({ required_error: zodErrors.required('sessionName') })
-      .min(3, { message: zodErrors.minString('sessionName', 3) }),
+    name: z
+      .string({ required_error: zodErrors.required('name') })
+      .min(3, { message: zodErrors.minString('name', 3) }),
   }),
 });
 

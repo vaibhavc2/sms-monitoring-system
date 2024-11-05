@@ -7,8 +7,8 @@ export interface IProgramSession extends Document {
   _id: string | Schema.Types.ObjectId;
   programId: Schema.Types.ObjectId; // References Program._id
   countryOperatorPairId: Schema.Types.ObjectId; // References country_operator_pairs._id
-  sessionName: string;
-  status: 'running' | 'stopped' | 'restarted';
+  name: string;
+  status: 'running' | 'stopped';
   startTime: Date;
   endTime?: Date;
   lastAction: 'started' | 'stopped' | 'restarted';
@@ -34,14 +34,14 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
         ref: 'CountryOperatorPair',
       },
     ],
-    sessionName: {
+    name: {
       type: String,
       required: true,
       trim: true,
     },
     status: {
       type: String,
-      enum: ['running', 'stopped', 'restarted'],
+      enum: ['running', 'stopped'],
       default: 'stopped',
     },
     startTime: {

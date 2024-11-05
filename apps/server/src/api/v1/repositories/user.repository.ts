@@ -55,6 +55,12 @@ class UserRepository {
 
     return userLookup;
   }
+
+  async getUserById(userId: number) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+    });
+  }
 }
 
 const userRepository = new UserRepository();

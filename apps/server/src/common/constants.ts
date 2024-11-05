@@ -62,6 +62,7 @@ const ct = {
     },
   },
   files: {
+    rootPath: path.join(__dirname, '../../'), // root path of the project
     uploadPath: 'uploads/scripts', // path to save uploaded files (scripts) using multer
   },
   mongo: {
