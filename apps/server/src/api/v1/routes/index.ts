@@ -5,6 +5,7 @@ import programSessionRouter from '#/api/v1/routes/program-session.routes';
 import countryRouter from '#/api/v1/routes/country.routes';
 import operatorRouter from '#/api/v1/routes/operator.routes';
 import countryOperatorPairRouter from '#/api/v1/routes/country-operator-pairs.routes';
+import adminRouter from '#/api/v1/routes/admin.routes';
 import express from 'express';
 
 // Create a new router instance
@@ -23,6 +24,8 @@ apiV1Router.use('/countries', countryRouter);
 apiV1Router.use('/operators', operatorRouter);
 
 apiV1Router.use('/country-operator-pairs', countryOperatorPairRouter);
+
+apiV1Router.use('/admin', adminRouter);
 
 // Export the router
 export default apiV1Router;

@@ -4,7 +4,7 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 import ct from '#/common/constants';
 
 export interface IProgramSession extends Document {
-  _id: string | Schema.Types.ObjectId;
+  _id: Schema.Types.ObjectId;
   programId: Schema.Types.ObjectId; // References Program._id
   countryOperatorPairId: Schema.Types.ObjectId; // References country_operator_pairs._id
   name: string;
@@ -63,7 +63,7 @@ const ProgramSessionSchema: Schema<IProgramSession> = new Schema(
       type: Number, // Changed to Number type to store Prisma User.id
     },
   },
-  ct.mongo.baseOptions,
+  ct.mongo.baseOptions(),
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving

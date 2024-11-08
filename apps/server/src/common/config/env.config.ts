@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import * as env from 'env-var';
+import ct from '../constants';
 
 dotenv.config();
 
@@ -28,7 +29,11 @@ const config = {
     .get('ACTIVATION_TOKEN_EXPIRY')
     .default('10m') // 10 minutes by default
     .asString(),
-  CIPHER_OFFSET: env.get('CIPHER_OFFSET').default(99999).asIntPositive(),
+  ENCODING_OFFSET: env.get('ENCODING_OFFSET').default(99999).asIntPositive(),
+  ENCODING_ALPHABET: env
+    .get('ENCODING_ALPHABET')
+    .default('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
+    .asString(),
 };
 
 const extraConfig = {

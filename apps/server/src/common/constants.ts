@@ -66,8 +66,10 @@ const ct = {
     uploadPath: 'uploads/scripts', // path to save uploaded files (scripts) using multer
   },
   mongo: {
-    baseOptions: {
-      timestamps: true,
+    baseOptions: (
+      { timestamps }: { timestamps: boolean } = { timestamps: true },
+    ) => ({
+      timestamps,
       toJSON: {
         virtuals: true,
         transform: (_doc: any, ret: any) => {
@@ -84,11 +86,14 @@ const ct = {
           return ret;
         },
       },
-    },
+    }),
   },
   encoding: {
-    alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
     base: 62,
+  },
+  defaultMessages: {
+    disabledReason: 'User disabled by admin',
+    enabledReason: 'User enabled by admin',
   },
 };
 

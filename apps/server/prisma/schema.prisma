@@ -16,17 +16,36 @@ enum Role {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
-  name       String
-  email      String    @unique
-  password   String
-  role       Role      @default(user)
-  isVerified Boolean   @default(false)
-  disabled   Boolean   @default(false)
-  disabledAt DateTime?
-  disabledBy Int?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  password       String
+  role           Role      @default(user)
+  isVerified     Boolean   @default(false)
+  promotedAt     DateTime?
+  promotedBy     Int?
+  demotedAt      DateTime?
+  demotedBy      Int?
+  disabled       Boolean   @default(false)
+  disabledAt     DateTime?
+  disabledBy     Int?
+  disabledReason String?
+  enabledAt      DateTime?
+  enabledBy      Int?
+  enabledReason  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // relationships
+  promotedByUser User? @relation("PromotedBy", fields: [promotedBy], references: [id])
+  demotedByUser  User? @relation("DemotedBy", fields: [demotedBy], references: [id])
+  disabledByUser User? @relation("DisabledBy", fields: [disabledBy], references: [id])
+  enabledByUser  User? @relation("EnabledBy", fields: [enabledBy], references: [id])
+
+  promotedUsers User[] @relation("PromotedBy")
+  demotedUsers  User[] @relation("DemotedBy")
+  disabledUsers User[] @relation("DisabledBy")
+  enabledUsers  User[] @relation("EnabledBy")
 
   @@index([email])
 }

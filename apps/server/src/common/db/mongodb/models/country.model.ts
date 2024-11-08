@@ -3,8 +3,8 @@ import mongoose, { AggregatePaginateModel, Document, Schema } from 'mongoose';
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 export interface ICountry extends Document {
-  _id: string | Schema.Types.ObjectId;
-  name: Schema.Types.ObjectId;
+  _id: Schema.Types.ObjectId;
+  name: string;
   createdAt: Date;
 }
 
@@ -18,7 +18,7 @@ const CountrySchema: Schema<ICountry> = new Schema(
       required: true,
     },
   },
-  ct.mongo.baseOptions,
+  ct.mongo.baseOptions(),
 );
 
 CountrySchema.plugin(mongooseAggregatePaginate);

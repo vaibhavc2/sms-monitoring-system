@@ -2,12 +2,13 @@ import envConfig from '#/common/config/env.config';
 import ct from '#/common/constants';
 
 class CipherService {
-  private readonly alphabet = ct.encoding.alphabet;
+  private readonly alphabet: string;
   private readonly base = ct.encoding.base;
   private readonly offset: number;
 
-  constructor(offset: number) {
+  constructor(alphabet: string, offset: number) {
     this.offset = offset;
+    this.alphabet = alphabet;
   }
 
   encodeId(id: number): string {
@@ -29,5 +30,7 @@ class CipherService {
   }
 }
 
-const cipherService = new CipherService(envConfig.CIPHER_OFFSET);
+const { ENCODING_ALPHABET, ENCODING_OFFSET } = envConfig;
+
+const cipherService = new CipherService(ENCODING_ALPHABET, ENCODING_OFFSET);
 export default cipherService;

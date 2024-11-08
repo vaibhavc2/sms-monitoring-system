@@ -4,7 +4,7 @@ import ct from '#/common/constants';
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 export interface IProgram extends Document {
-  _id: string | Schema.Types.ObjectId;
+  _id: Schema.Types.ObjectId;
   name: string;
   description?: string;
   fileName: string; // file name of the program on the server
@@ -63,7 +63,7 @@ const ProgramSchema: Schema<IProgram> = new Schema(
       type: Number, // Changed to Number type to store Prisma User.id
     },
   },
-  ct.mongo.baseOptions,
+  ct.mongo.baseOptions(),
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving

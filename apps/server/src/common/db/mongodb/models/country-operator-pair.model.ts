@@ -4,7 +4,7 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 import ct from '#/common/constants';
 
 export interface ICountryOperatorPair extends Document {
-  _id: string | Schema.Types.ObjectId;
+  _id: Schema.Types.ObjectId;
   programId: Schema.Types.ObjectId;
   countryId: Schema.Types.ObjectId;
   operatorId: Schema.Types.ObjectId;
@@ -56,7 +56,7 @@ const CountryOperatorPairSchema: Schema<ICountryOperatorPair> = new Schema(
       type: Number,
     },
   },
-  ct.mongo.baseOptions,
+  ct.mongo.baseOptions(),
 );
 
 // Add a middleware to validate that the user exists in Prisma before saving
