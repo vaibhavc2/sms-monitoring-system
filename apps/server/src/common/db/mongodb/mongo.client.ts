@@ -13,6 +13,7 @@ import {
 } from './models/country-operator-pair.model';
 import { Country, ICountry } from './models/country.model';
 import { Operator, IOperator } from './models/operator.model';
+import { SMSMetrics, ISMSMetrics } from './models/sms-metrics.model';
 
 const { MONGO_URI, MONGO_DB_NAME } = envConfig;
 
@@ -22,6 +23,7 @@ export type {
   ICountryOperatorPair,
   ICountry,
   IOperator,
+  ISMSMetrics,
 };
 
 type Models = {
@@ -30,6 +32,7 @@ type Models = {
   CountryOperatorPair: typeof CountryOperatorPair;
   Country: typeof Country;
   Operator: typeof Operator;
+  SMSMetrics: typeof SMSMetrics;
 };
 
 class MongoClient {
@@ -42,6 +45,7 @@ class MongoClient {
       CountryOperatorPair,
       Country,
       Operator,
+      SMSMetrics,
     };
   }
 
